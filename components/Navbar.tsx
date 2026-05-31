@@ -24,7 +24,7 @@ export default function Navbar() {
           </div>
 
           <Link href="https://buy.stripe.com/test_eVqfZj4Vg7Ro3294p77kc00" className="nav-cta">
-            Buy the Boo
+            Buy the Book
           </Link>
 
           <button
