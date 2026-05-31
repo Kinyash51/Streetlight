@@ -12,7 +12,7 @@ export default function Hero() {
 
         <h1 className="hero-title">
           Where the streets <br />
-          <em>remember</em> everything..and forget nothing
+          <em>remember</em> everything.
         </h1>
 
         <p className="hero-sub">
