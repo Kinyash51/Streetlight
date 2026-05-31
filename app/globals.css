@@ -989,3 +989,13 @@ overflow: hidden;
 .success-card small {
   color: var(--text-secondary);
 }
+
+@media (max-width: 700px) {
+  .drop:nth-child(n + 21) {
+    display: none;
+  }
+
+  .book-3d {
+    animation: none;
+  }
+}
