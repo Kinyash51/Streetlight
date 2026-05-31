@@ -999,3 +999,30 @@ overflow: hidden;
     animation: none;
   }
 }
+
+.auth-page {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.auth-card {
+  max-width: 420px;
+  width: 100%;
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--black-card);
+}
+
+.auth-card input {
+  width: 100%;
+  padding: 14px;
+  margin: 20px 0;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--black);
+  color: white;
+}
