@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase-client";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,10 +15,26 @@ export default function LoginPage() {
         },
       });
 
+      if (error) {
+        toast.error(`Login failed: ${error.message}`);
+        return;
+      }
+      
+      toast.success(
+        "Check your email. Your Streetlight login link is on the way."
+      );
+  }
+
+  async function signInWithGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+  
     if (error) {
-      alert(error.message);
-    } else {
-      alert("Check your email for the login link.");
+      toast.error("Google sign in failed. Please try again.");
     }
   }
 
@@ -25,6 +42,10 @@ export default function LoginPage() {
     <main className="auth-page">
       <div className="auth-card">
         <h1>Login to Streetlight</h1>
+
+        <button onClick={signInWithGoogle} className="btn-ghost">
+  Continue with Google
+</button>
 
         <input
           type="email"
