@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { pricing } from "@/lib/pricing";
 
 export default function BookPage() {
   return (
@@ -23,13 +24,16 @@ export default function BookPage() {
             A homeless teenager drifting through a rain-soaked city is pulled
             into a hidden world operating beneath the neon glow of the streets.
           </p>
+          <p>
+            <strong>{pricing.ebook.price}</strong> {pricing.ebook.billing}.
+          </p>
 
           <div className="book-actions">
             <Link href="/read" className="btn-ghost">
               Read Chapter One
             </Link>
 
-            <Link href="https://buy.stripe.com/test_eVqfZj4Vg7Ro3294p77kc00" className="btn-primary">
+            <Link href={pricing.ebook.href} className="btn-primary">
               Buy eBook
             </Link>
           </div>

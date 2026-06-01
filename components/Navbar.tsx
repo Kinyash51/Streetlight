@@ -23,7 +23,7 @@ export default function Navbar() {
             <Link href="/about" className="nav-link">About</Link>
           </div>
 
-          <Link href="https://buy.stripe.com/test_eVqfZj4Vg7Ro3294p77kc00" className="nav-cta">
+          <Link href="/checkout" className="nav-cta">
             Buy the Book
           </Link>
 

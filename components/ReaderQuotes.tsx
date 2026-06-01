@@ -26,7 +26,7 @@ export default function ReaderQuotes() {
             <div className="quote-card" key={index}>
               <div className="stars">★★★★★</div>
   
-              <p>"{quote.text}"</p>
+              <p>&quot;{quote.text}&quot;</p>
   
               <span>— {quote.author}</span>
             </div>

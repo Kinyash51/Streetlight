@@ -1,15 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
 import { toast } from "sonner";
 import "./auth.css";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/auth/callback?next=/dashboard`
+      : undefined;
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("error") === "auth") {
+      toast.error("Sign in could not be completed. Please try again.");
+    }
+  }, []);
+
+  useEffect(() => {
+    async function redirectSignedInUser() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        router.replace("/dashboard");
+        return;
+      }
+
+      setCheckingSession(false);
+    }
+
+    redirectSignedInUser();
+  }, [router]);
 
   async function signIn() {
     const trimmed = email.trim();
@@ -29,7 +60,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email: trimmed,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: redirectTo,
       },
     });
 
@@ -50,7 +81,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo,
       },
     });
 
@@ -61,6 +92,16 @@ export default function LoginPage() {
       toast.error("Google sign in failed. Please try again.");
       return;
     }
+  }
+
+  if (checkingSession) {
+    return (
+      <main className="auth-page">
+        <div className="auth-card">
+          <h1>Checking your session...</h1>
+        </div>
+      </main>
+    );
   }
 
   // After email is sent — show confirmation state

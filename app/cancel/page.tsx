@@ -10,7 +10,7 @@ export default function CancelPage() {
 
         <p>
           Your payment was not completed. You can return to checkout whenever
-          you're ready.
+          you&apos;re ready.
         </p>
 
         <div className="success-actions">

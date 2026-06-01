@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { pricing } from "@/lib/pricing";
 
 const tiers = [
   {
-    name: "Free Reader",
-    price: "Free",
+    name: pricing.freeReader.name,
+    price: pricing.freeReader.price,
     badge: "",
     benefits: [
       "Chapter One access",
@@ -15,30 +16,32 @@ const tiers = [
     cta: "Start Reading",
   },
   {
-    name: "Supporter",
-    price: "$4.99",
+    name: pricing.supporter.name,
+    price: pricing.supporter.price,
     badge: "Most Popular",
     benefits: [
+      "Recurring monthly membership",
       "Full eBook access",
       "Early chapter previews",
       "Behind-the-scenes notes",
       "Support future Streetlight stories",
     ],
-    href: "https://buy.stripe.com/test_7sYfZjafA8VsbyF3l37kc02",
+    href: pricing.supporter.href,
     cta: "Become a Supporter",
   },
   {
-    name: "Patron",
-    price: "$9.99",
+    name: pricing.patron.name,
+    price: pricing.patron.price,
     badge: "Coming Soon",
     benefits: [
+      "Recurring monthly membership",
       "Bonus stories",
       "Name in acknowledgements",
       "Private updates",
       "Future patron-only extras",
     ],
-    href: "/community",
-    cta: "Coming Soon",
+    checkoutProduct: pricing.patron.checkoutProduct,
+    cta: "Become a Patron",
   },
 ];
 
@@ -66,7 +69,7 @@ export default function CommunityPage() {
           {tiers.map((tier) => (
             <div
               className={`tier-card ${
-                tier.name === "Supporter" ? "featured" : ""
+                tier.name === pricing.supporter.name ? "featured" : ""
               }`}
               key={tier.name}
             >
@@ -81,9 +84,22 @@ export default function CommunityPage() {
                 ))}
               </ul>
 
-              <Link href={tier.href} className="btn-primary">
-                {tier.cta}
-              </Link>
+              {"checkoutProduct" in tier ? (
+                <form action="/api/checkout" method="post">
+                  <input
+                    type="hidden"
+                    name="product"
+                    value={tier.checkoutProduct}
+                  />
+                  <button type="submit" className="btn-primary">
+                    {tier.cta}
+                  </button>
+                </form>
+              ) : (
+                <Link href={tier.href} className="btn-primary">
+                  {tier.cta}
+                </Link>
+              )}
             </div>
           ))}
         </div>

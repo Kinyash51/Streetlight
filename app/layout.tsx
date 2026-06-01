@@ -33,13 +33,8 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col">
         <Navbar />
         {children}
-        <Toaster position="top-center" richColors />
         <Footer />
-  <Toaster
-  position="top-right"
-  richColors
-  theme="dark"
-/>
+        <Toaster position="top-right" richColors theme="dark" />
       </body>
     </html>
   );

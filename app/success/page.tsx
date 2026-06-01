@@ -10,8 +10,8 @@ export default function SuccessPage() {
 
         <p>
           Your payment was completed successfully. If you purchased the eBook,
-          your download is ready below. If you joined as a Supporter, welcome
-          to the growing Streetlight community.
+          your one-time purchase is ready below. If you joined a monthly
+          membership, welcome to the growing Streetlight community.
         </p>
 
         <div className="success-actions">

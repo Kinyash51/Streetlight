@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { pricing } from "@/lib/pricing";
 
 export default function ReadPage() {
   return (
@@ -42,7 +43,7 @@ export default function ReadPage() {
           </p>
 
           <Link href="/checkout" className="btn-primary">
-            Buy the eBook
+            Buy the eBook for {pricing.ebook.price} one-time
           </Link>
         </section>
       </article>
