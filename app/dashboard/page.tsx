@@ -165,10 +165,11 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="dashboard-page">
-        <section className="dashboard-card">
+      <main className="dashboard-page dashboard-loading">
+        <section>
           <p className="section-tag">Streetlight</p>
-          <h1>Loading your dashboard...</h1>
+          <h1>Checking your access...</h1>
+          <div className="dashboard-loading-line" aria-hidden="true" />
         </section>
       </main>
     );
@@ -212,9 +213,6 @@ export default function DashboardPage() {
           <p>
             <strong>Email:</strong> {profileEmail}
           </p>
-          <p className="dashboard-muted">
-            <strong>User ID:</strong> {user.id}
-          </p>
           {profileError ? (
             <p className="dashboard-muted">
               Profile details could not be loaded yet. Using your Supabase auth
@@ -242,7 +240,7 @@ export default function DashboardPage() {
             Start with Chapter One of The Drowned Streetlamp.
           </p>
 
-          <Link href="/read" className="btn-primary">
+          <Link href="/read" className="btn-primary dashboard-action">
             Start Reading
           </Link>
         </div>
