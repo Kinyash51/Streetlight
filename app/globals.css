@@ -712,6 +712,19 @@ overflow: hidden;
   }
 }
 
+.auth-card .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.auth-card .btn-ghost img,
+.auth-card .btn-ghost svg {
+  display: block;
+  flex: 0 0 auto;
+}
+
 .book-3d-container {
   perspective: 1200px;
   display: flex;
