@@ -9,6 +9,7 @@ import {
   type StripeInvoiceObject,
   type StripeSubscriptionObject,
 } from "@/lib/stripe";
+import { handleWebhookEmail } from "@/lib/webhook-emails";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -45,6 +46,8 @@ export async function POST(request: NextRequest) {
       default:
         break;
     }
+
+    await handleWebhookEmail(event);
 
     return NextResponse.json({ received: true });
   } catch (error) {

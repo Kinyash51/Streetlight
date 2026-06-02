@@ -34,6 +34,8 @@ export type StripeSubscriptionObject = {
 };
 
 export type StripeInvoiceObject = {
+  customer?: string | { id?: string | null } | null;
+  billing_reason?: string | null;
   subscription?: string | { id?: string | null } | null;
   parent?: {
     subscription_details?: {
