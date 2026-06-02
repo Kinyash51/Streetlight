@@ -6,9 +6,10 @@ type StripeCheckoutSession = {
   url: string | null;
 };
 
-type StripeCheckoutCompletedSession = {
+export type StripeCheckoutCompletedSession = {
   id: string;
   mode?: "payment" | "subscription";
+  client_reference_id?: string | null;
   amount_total?: number | null;
   currency?: string | null;
   customer?: string | null;
@@ -21,10 +22,33 @@ type StripeCheckoutCompletedSession = {
   } | null;
 };
 
+export type StripeSubscriptionObject = {
+  id: string;
+  customer?: string | null;
+  status?: string | null;
+  metadata?: {
+    product?: CheckoutProduct;
+    tier?: CheckoutProduct;
+    user_id?: string;
+  } | null;
+};
+
+export type StripeInvoiceObject = {
+  subscription?: string | { id?: string | null } | null;
+  parent?: {
+    subscription_details?: {
+      subscription?: string | { id?: string | null } | null;
+    } | null;
+  } | null;
+};
+
 type StripeEvent = {
   type: string;
   data: {
-    object: StripeCheckoutCompletedSession;
+    object:
+      | StripeCheckoutCompletedSession
+      | StripeSubscriptionObject
+      | StripeInvoiceObject;
   };
 };
 
@@ -106,6 +130,8 @@ export async function createStripeCheckoutSession({
 
   if (productConfig.mode === "subscription") {
     params.set("line_items[0][price_data][recurring][interval]", "month");
+    params.set("subscription_data[metadata][product]", productConfig.metadataProduct);
+    params.set("subscription_data[metadata][user_id]", userId);
   }
 
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
@@ -233,8 +259,138 @@ export function createSupabaseAdminClient() {
   });
 }
 
+function getStripeObjectId(value: StripeInvoiceObject["subscription"]): string | null {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  return value.id ?? null;
+}
+
+function getInvoiceSubscriptionId(invoice: StripeInvoiceObject) {
+  return (
+    getStripeObjectId(invoice.subscription) ??
+    getStripeObjectId(invoice.parent?.subscription_details?.subscription ?? null)
+  );
+}
+
+async function retrieveStripeSubscription(subscriptionId: string) {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+  if (!stripeSecretKey) {
+    throw new Error("Missing STRIPE_SECRET_KEY.");
+  }
+
+  const response = await fetch(
+    `https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${stripeSecretKey}`,
+        "Stripe-Version": stripeApiVersion,
+      },
+    }
+  );
+
+  const data = (await response.json()) as StripeSubscriptionObject & {
+    error?: { message?: string };
+  };
+
+  if (!response.ok) {
+    throw new Error(data.error?.message ?? "Unable to retrieve Stripe subscription.");
+  }
+
+  return data;
+}
+
+export async function recordInvoicePaid(invoice: StripeInvoiceObject) {
+  const subscriptionId = getInvoiceSubscriptionId(invoice);
+
+  if (!subscriptionId) {
+    return;
+  }
+
+  const subscription = await retrieveStripeSubscription(subscriptionId);
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase
+    .from("subscriptions")
+    .update({
+      status: subscription.status ?? "active",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("stripe_subscription_id", subscriptionId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function recordInvoicePaymentFailed(invoice: StripeInvoiceObject) {
+  const subscriptionId = getInvoiceSubscriptionId(invoice);
+
+  if (!subscriptionId) {
+    return;
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase
+    .from("subscriptions")
+    .update({
+      status: "past_due",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("stripe_subscription_id", subscriptionId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function recordSubscriptionUpdated(subscription: StripeSubscriptionObject) {
+  const product = getCheckoutProduct(
+    subscription.metadata?.product ?? subscription.metadata?.tier ?? null
+  );
+  const supabase = createSupabaseAdminClient();
+  const updates: Record<string, string | null> = {
+    status: subscription.status ?? "active",
+    stripe_customer_id: subscription.customer ?? null,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (product) {
+    updates.tier = product;
+  }
+
+  const { error } = await supabase
+    .from("subscriptions")
+    .update(updates)
+    .eq("stripe_subscription_id", subscription.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function recordSubscriptionDeleted(subscription: StripeSubscriptionObject) {
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase
+    .from("subscriptions")
+    .update({
+      status: "canceled",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("stripe_subscription_id", subscription.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 export async function recordCheckoutCompleted(session: StripeCheckoutCompletedSession) {
-  const userId = session.metadata?.user_id;
+  const userId = session.metadata?.user_id ?? session.client_reference_id;
   const product = getCheckoutProduct(session.metadata?.product ?? null);
 
   if (!userId || !product) {
@@ -264,13 +420,19 @@ export async function recordCheckoutCompleted(session: StripeCheckoutCompletedSe
     return;
   }
 
+  if (!session.subscription) {
+    throw new Error("Missing Stripe subscription id.");
+  }
+
+  const subscription = await retrieveStripeSubscription(session.subscription);
   const { error } = await supabase.from("subscriptions").upsert(
     {
       user_id: userId,
       tier: product,
       stripe_subscription_id: session.subscription,
-      stripe_customer_id: session.customer,
-      status: "active",
+      stripe_customer_id: session.customer ?? subscription.customer ?? null,
+      status: subscription.status ?? "active",
+      updated_at: new Date().toISOString(),
     },
     { onConflict: "stripe_subscription_id" }
   );

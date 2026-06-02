@@ -1,4 +1,14 @@
-import { recordCheckoutCompleted, verifyStripeWebhookEvent } from "@/lib/stripe";
+import {
+  recordCheckoutCompleted,
+  recordInvoicePaid,
+  recordInvoicePaymentFailed,
+  recordSubscriptionDeleted,
+  recordSubscriptionUpdated,
+  verifyStripeWebhookEvent,
+  type StripeCheckoutCompletedSession,
+  type StripeInvoiceObject,
+  type StripeSubscriptionObject,
+} from "@/lib/stripe";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -8,8 +18,32 @@ export async function POST(request: NextRequest) {
   try {
     const event = await verifyStripeWebhookEvent(payload, signature);
 
-    if (event.type === "checkout.session.completed") {
-      await recordCheckoutCompleted(event.data.object);
+    switch (event.type) {
+      case "checkout.session.completed":
+        await recordCheckoutCompleted(
+          event.data.object as StripeCheckoutCompletedSession
+        );
+        break;
+      case "invoice.paid":
+        await recordInvoicePaid(event.data.object as StripeInvoiceObject);
+        break;
+      case "invoice.payment_failed":
+        await recordInvoicePaymentFailed(
+          event.data.object as StripeInvoiceObject
+        );
+        break;
+      case "customer.subscription.updated":
+        await recordSubscriptionUpdated(
+          event.data.object as StripeSubscriptionObject
+        );
+        break;
+      case "customer.subscription.deleted":
+        await recordSubscriptionDeleted(
+          event.data.object as StripeSubscriptionObject
+        );
+        break;
+      default:
+        break;
     }
 
     return NextResponse.json({ received: true });
