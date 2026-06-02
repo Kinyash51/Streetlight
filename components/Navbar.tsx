@@ -59,6 +59,7 @@ export default function Navbar() {
             <Link href="/universe" className="nav-link">Universe</Link>
             <Link href="/community" className="nav-link">Community</Link>
             <Link href="/about" className="nav-link">About</Link>
+            <Link href="/search" className="nav-link">Search</Link>
           </div>
 
           <Link href="/checkout" className="nav-cta">
@@ -81,6 +82,7 @@ export default function Navbar() {
         <Link href="/universe" onClick={() => setOpen(false)}>Universe</Link>
         <Link href="/community" onClick={() => setOpen(false)}>Community</Link>
         <Link href="/about" onClick={() => setOpen(false)}>About</Link>
+        <Link href="/search" onClick={() => setOpen(false)}>Search</Link>
         <Link href="/checkout" className="mobile-buy" onClick={() => setOpen(false)}>
           Buy the Book
         </Link>
