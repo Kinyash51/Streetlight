@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   title: "Streetlight - Urban Noir Fiction by Trevor Kinyanjui",
   description:
     "The Drowned Streetlamp, a rain-soaked urban noir story about memory, loneliness, and survival.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
