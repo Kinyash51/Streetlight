@@ -283,61 +283,114 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="dashboard-page reader-dashboard">
-      <section className="reader-shell">
-        <div className="reader-welcome">
-          <p className="section-tag">Reader Home</p>
+    <main className="dashboard-page reader-dashboard dashboard-app">
+      <section className="dashboard-app-shell">
+        <header className="dashboard-app-welcome">
+          <p className="reader-kicker">Reader Home</p>
           <h1>Welcome back, {profileName}.</h1>
           <p>
-            Pick up the story, check your access, and unlock more of The
-            Drowned Streetlamp when you are ready.
+            Pick up the story, check your access, and unlock more of{" "}
+            <em>The Drowned Streetlamp</em> when you are ready.
           </p>
-        </div>
+        </header>
 
-        <section className="reader-layout" aria-label="Streetlight reader dashboard">
-          <article className="reader-panel reader-feature">
-            <div>
+        <section className="dashboard-app-grid" aria-label="Streetlight reader dashboard">
+          <div className="dashboard-main-stack">
+            <article className="reader-panel dashboard-continue-card">
               <p className="reader-kicker">Continue Reading</p>
-              <h2>{pricing.ebook.name}</h2>
-              <p className="dashboard-muted">
-                Chapter One is ready. Start with the free preview, then unlock
-                the full eBook when you want the rest.
-              </p>
-            </div>
 
-            <div className="reader-book-row">
-              <span className="reader-chapter">Chapter One - Free preview</span>
-              <span className="access-pill">
-                {access.ebookOwned ? "Owned" : "Free preview"}
-              </span>
-            </div>
+              <div className="dashboard-book-line">
+                <div className="dashboard-book-mark" aria-hidden="true">
+                  SL
+                </div>
 
-            <div className="dashboard-progress">
-              <div>
-                <span>{lastOpenedLabel}</span>
-                <strong>{progressLabel}</strong>
+                <div className="dashboard-book-info">
+                  <div className="dashboard-book-meta">
+                    <span>Chapter One</span>
+                    <span className="access-pill">
+                      {access.ebookOwned ? "Owned" : "Free preview"}
+                    </span>
+                  </div>
+                  <h2>{pricing.ebook.name}</h2>
+                  <p className="dashboard-muted">
+                    Start with the free preview, then unlock the full eBook when
+                    you want the rest.
+                  </p>
+                </div>
               </div>
-              <div className="dashboard-progress-track" aria-hidden="true">
-                <span style={{ width: `${Math.max(8, progressPercent)}%` }} />
-              </div>
-            </div>
 
-            <div className="reader-actions">
-              <Link href="/read/chapter-one" className="btn-primary">
-                Continue Chapter One
-              </Link>
-              {!access.ebookOwned ? (
-                <Link href={pricing.ebook.href} className="btn-ghost">
-                  Buy eBook - {pricing.ebook.price}
+              <div className="dashboard-progress dashboard-progress-compact">
+                <div>
+                  <span>{lastOpenedLabel}</span>
+                  <strong>{progressLabel}</strong>
+                </div>
+                <div className="dashboard-progress-track" aria-hidden="true">
+                  <span style={{ width: `${Math.max(8, progressPercent)}%` }} />
+                </div>
+              </div>
+
+              <div className="dashboard-actions-row">
+                <Link href="/read/chapter-one" className="btn-primary">
+                  Continue Chapter One
                 </Link>
-              ) : null}
-            </div>
-          </article>
+                {!access.ebookOwned ? (
+                  <Link href={pricing.ebook.href} className="btn-ghost">
+                    Buy eBook - {pricing.ebook.price}
+                  </Link>
+                ) : null}
+              </div>
+            </article>
 
-          <aside className="reader-side">
-            <article className="reader-panel">
-              <p className="reader-kicker">Your Tier</p>
-              <h3>{membershipStatus}</h3>
+            <section className="dashboard-bottom-grid" aria-label="Reader updates">
+              <article className="reader-panel dashboard-drop-card">
+                <p className="reader-kicker">New Drops</p>
+                <div className="dashboard-drop-list">
+                  <div>
+                    <span className="drop-dot" aria-hidden="true" />
+                    <span>Chapter One</span>
+                    <strong>Live now</strong>
+                  </div>
+                  <div>
+                    <span className="drop-dot" aria-hidden="true" />
+                    <span>Reader progress</span>
+                    <strong>Saving locally</strong>
+                  </div>
+                  <div>
+                    <span className="drop-dot dim" aria-hidden="true" />
+                    <span>Supporter notes</span>
+                    <strong>Coming soon</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article className="reader-panel dashboard-highlights-card">
+                <div>
+                  <p className="reader-kicker">Highlights</p>
+                  <h3>Saved passages</h3>
+                  <p className="dashboard-muted">
+                    Select a passage in Chapter One, save it, and return to it
+                    from your highlights library.
+                  </p>
+                </div>
+                <Link href="/highlights" className="btn-ghost dashboard-action">
+                  View Highlights
+                </Link>
+              </article>
+            </section>
+          </div>
+
+          <aside className="dashboard-side-stack">
+            <article className="reader-panel dashboard-tier-card">
+              <div className="dashboard-tier-top">
+                <div>
+                  <p className="reader-kicker">Your Tier</p>
+                  <h3>{membershipStatus}</h3>
+                </div>
+                <span className="access-pill">Active</span>
+              </div>
+
+              <div className="dashboard-thin-divider" />
+
               <div className="access-list">
                 <div>
                   <span>Membership</span>
@@ -348,13 +401,14 @@ export default function DashboardPage() {
                   <strong>{access.ebookOwned ? "Purchased" : "Not purchased"}</strong>
                 </div>
               </div>
-              <p className="dashboard-muted">
-                Free Reader access is active. Supporter and purchase status will
-                connect here as Stripe webhooks update Supabase.
+
+              <p className="dashboard-muted dashboard-small-note">
+                Supporter and purchase status updates here after Stripe syncs to
+                Supabase.
               </p>
             </article>
 
-            <article className="reader-panel">
+            <article className="reader-panel dashboard-unlock-card">
               <p className="reader-kicker">Unlock More</p>
               <div className="unlock-list">
                 {!access.ebookOwned ? (
@@ -367,10 +421,14 @@ export default function DashboardPage() {
                   <span>Become Supporter</span>
                   <strong>{pricing.supporter.price}</strong>
                 </Link>
+                <span className="dashboard-disabled-row">
+                  <span>Become Patron</span>
+                  <strong>{pricing.patron.price}</strong>
+                </span>
               </div>
             </article>
 
-            <article className="reader-panel account-panel">
+            <article className="reader-panel account-panel dashboard-account-card">
               <p className="reader-kicker">Account</p>
               <p>{profileEmail}</p>
               {profileError ? (
@@ -379,7 +437,7 @@ export default function DashboardPage() {
                   auth account for now.
                 </p>
               ) : null}
-              <div className="reader-actions">
+              <div className="dashboard-account-actions">
                 <Link href="/account" className="btn-primary">
                   Account Settings
                 </Link>
@@ -389,39 +447,6 @@ export default function DashboardPage() {
               </div>
             </article>
           </aside>
-        </section>
-
-        <section className="dashboard-secondary" aria-label="Reader updates">
-          <article className="reader-panel dashboard-drop-card">
-            <p className="reader-kicker">New Drops</p>
-            <h3>What is waiting next</h3>
-            <div className="dashboard-list">
-              <div>
-                <span>Chapter One</span>
-                <strong>Free preview live</strong>
-              </div>
-              <div>
-                <span>Reader progress</span>
-                <strong>Saving locally</strong>
-              </div>
-              <div>
-                <span>Supporter notes</span>
-                <strong>Coming after highlights</strong>
-              </div>
-            </div>
-          </article>
-
-          <article className="reader-panel dashboard-highlights-card">
-            <p className="reader-kicker">Highlights</p>
-            <h3>Saved passages</h3>
-            <p className="dashboard-muted">
-              Select a passage in Chapter One, save it, and return to it from
-              your highlights library.
-            </p>
-            <Link href="/highlights" className="btn-ghost dashboard-action">
-              View Highlights
-            </Link>
-          </article>
         </section>
       </section>
     </main>
