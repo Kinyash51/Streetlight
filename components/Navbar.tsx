@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import AuthNav from "@/components/AuthNav";
 import { SearchTrigger, type SearchChapter } from "@/components/Search";
 import { chapters } from "@/lib/chapters";
 
@@ -72,6 +73,8 @@ export default function Navbar() {
 
           <SearchTrigger chapters={searchChapters} />
 
+          <AuthNav />
+
           <Link href="/checkout" className="nav-cta">
             Buy the Book
           </Link>
@@ -93,6 +96,9 @@ export default function Navbar() {
         <Link href="/community" onClick={() => setOpen(false)}>Community</Link>
         <Link href="/about" onClick={() => setOpen(false)}>About</Link>
         <Link href="/search" onClick={() => setOpen(false)}>Search</Link>
+        <Link href="/login" onClick={() => setOpen(false)}>Sign In</Link>
+        <Link href="/dashboard" onClick={() => setOpen(false)}>Dashboard</Link>
+        <Link href="/account" onClick={() => setOpen(false)}>Account</Link>
         <Link href="/checkout" className="mobile-buy" onClick={() => setOpen(false)}>
           Buy the Book
         </Link>
