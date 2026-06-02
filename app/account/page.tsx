@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase-client";
 import { pricing } from "@/lib/pricing";
+import { AccountSkeleton } from "@/components/SkeletonLoading";
 
 type Profile = {
   id: string;
@@ -148,15 +149,7 @@ export default function AccountPage() {
   const accountEmail = profile?.email ?? user?.email ?? "No email found";
 
   if (loading) {
-    return (
-      <main className="account-page">
-        <section className="account-shell">
-          <p className="section-tag">Account</p>
-          <h1>Loading your account...</h1>
-          <div className="dashboard-loading-line" aria-hidden="true" />
-        </section>
-      </main>
-    );
+    return <AccountSkeleton />;
   }
 
   return (

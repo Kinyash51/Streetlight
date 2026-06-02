@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { pricing } from "@/lib/pricing";
+import TrustBadges, { CheckoutTrustNote } from "@/components/TrustBadges";
 
 export default function Page() {
   return (
@@ -24,6 +25,10 @@ export default function Page() {
               subscription and will connect to your reader account once purchase
               tracking is active.
             </p>
+            <div className="instant-access-note">
+              <span aria-hidden="true" />
+              <strong>Read immediately after purchase</strong>
+            </div>
           </div>
 
           <div className="checkout-price-box">
@@ -32,6 +37,8 @@ export default function Page() {
             <Link href={pricing.ebook.href} className="btn-primary">
               Buy eBook
             </Link>
+            <TrustBadges />
+            <CheckoutTrustNote />
           </div>
         </article>
 

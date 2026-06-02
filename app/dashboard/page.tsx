@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase-client";
 import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import { pricing } from "@/lib/pricing";
+import { DashboardSkeleton } from "@/components/SkeletonLoading";
 
 type Profile = {
   id: string;
@@ -252,15 +253,7 @@ export default function DashboardPage() {
     : "No saved progress yet";
 
   if (loading) {
-    return (
-      <main className="dashboard-page dashboard-loading">
-        <section>
-          <p className="section-tag">Streetlight</p>
-          <h1>Checking your access...</h1>
-          <div className="dashboard-loading-line" aria-hidden="true" />
-        </section>
-      </main>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!user) {
