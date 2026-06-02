@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get("code");
   const authError = requestUrl.searchParams.get("error");
   const next = requestUrl.searchParams.get("next") ?? "/welcome";
-  const safeNext = next.startsWith("/") ? next : "/dashboard";
+  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
   const redirectUrl = new URL(safeNext, requestUrl.origin);
 
   let response = NextResponse.redirect(redirectUrl);
@@ -24,13 +24,9 @@ export async function GET(request: NextRequest) {
           getAll() {
             return request.cookies.getAll();
           },
-          setAll(cookiesToSet, headers) {
+          setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) => {
               response.cookies.set(name, value, options);
-            });
-
-            Object.entries(headers).forEach(([key, value]) => {
-              response.headers.set(key, value);
             });
           },
         },

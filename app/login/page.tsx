@@ -1,13 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
 import { toast } from "sonner";
 import "./auth.css";
 
-export default function LoginPage() {
+function LoginLoading() {
+  return (
+    <main className="auth-page">
+      <div className="auth-card">
+        <h1>Checking your session...</h1>
+      </div>
+    </main>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -16,9 +27,14 @@ export default function LoginPage() {
   const [otpLoading, setOtpLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
 
+  const requestedNext = searchParams.get("next");
+  const nextPath =
+    requestedNext?.startsWith("/") && !requestedNext.startsWith("//")
+      ? requestedNext
+      : "/welcome";
   const redirectTo =
     typeof window !== "undefined"
-      ? `${window.location.origin}/auth/callback?next=/welcome`
+      ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
       : undefined;
 
   useEffect(() => {
@@ -34,7 +50,7 @@ export default function LoginPage() {
       } = await supabase.auth.getSession();
 
       if (session) {
-        router.replace("/welcome");
+        router.replace(nextPath);
         return;
       }
 
@@ -42,7 +58,7 @@ export default function LoginPage() {
     }
 
     redirectSignedInUser();
-  }, [router]);
+  }, [nextPath, router]);
 
   async function signIn() {
     const trimmed = email.trim();
@@ -123,17 +139,11 @@ export default function LoginPage() {
       return;
     }
 
-    router.replace("/welcome");
+    router.replace(nextPath);
   }
 
   if (checkingSession) {
-    return (
-      <main className="auth-page">
-        <div className="auth-card">
-          <h1>Checking your session...</h1>
-        </div>
-      </main>
-    );
+    return <LoginLoading />;
   }
 
   if (emailSent) {
@@ -256,5 +266,13 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginLoading />}>
+      <LoginForm />
+    </Suspense>
   );
 }
