@@ -22,12 +22,12 @@ export default function Hero() {
         </p>
 
         <div className="hero-actions">
-          <Link href="/book" className="btn-primary">
-            Read The Drowned Streetlamp
+          <Link href="/read/chapter-one" className="btn-primary">
+            Start Chapter One
           </Link>
 
-          <Link href="/community" className="btn-ghost">
-            Join as Beta Reader
+          <Link href="/book" className="btn-ghost">
+            Explore the Book
           </Link>
         </div>
       </div>

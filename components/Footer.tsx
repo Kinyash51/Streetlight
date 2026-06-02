@@ -18,6 +18,7 @@ export default function Footer() {
           <Link href="/universe">Universe</Link>
           <Link href="/community">Community</Link>
           <Link href="/about">About</Link>
+          <Link href="/search">Search</Link>
         </div>
 
         <small>© 2026 Streetlight. All rights reserved.</small>

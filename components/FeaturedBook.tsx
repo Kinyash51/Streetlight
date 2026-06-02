@@ -23,9 +23,14 @@ export default function FeaturedBook() {
             the quiet violence of survival.
           </p>
 
-          <Link href="/book" className="btn-primary">
-            Explore the Book
-          </Link>
+          <div className="book-actions">
+            <Link href="/read/chapter-one" className="btn-primary">
+              Start Chapter One
+            </Link>
+            <Link href="/book" className="btn-ghost">
+              Explore the Book
+            </Link>
+          </div>
         </div>
       </div>
       </FadeIn>
