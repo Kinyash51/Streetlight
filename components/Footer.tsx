@@ -4,12 +4,17 @@ export default function Footer() {
   return (
     <footer className="site-footer">
       <div className="footer-inner">
-        <div>
+        <div className="footer-brand">
           <h3>Streetlight</h3>
           <p>
             Urban noir fiction by Trevor Kinyanjui. Stories of survival,
             loneliness, and secrets beneath neon light.
           </p>
+          <div className="footer-social-proof">
+            <span>The Drowned Streetlamp</span>
+            <span>Chapter One live</span>
+            <span>Chapter Two in progress</span>
+          </div>
         </div>
 
         <div className="footer-links">
@@ -21,7 +26,9 @@ export default function Footer() {
           <Link href="/search">Search</Link>
         </div>
 
-        <small>© 2026 Streetlight. All rights reserved.</small>
+        <div className="footer-bottom">
+          <small>© 2026 Streetlight. All rights reserved.</small>
+        </div>
       </div>
     </footer>
   );

@@ -1,0 +1,95 @@
+"use client";
+
+import { useState } from "react";
+import FadeIn from "./FadeIn";
+
+export default function NewsletterCapture() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">(
+    "idle",
+  );
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!email.trim() || !email.includes("@")) {
+      setStatus("error");
+      return;
+    }
+
+    setStatus("submitting");
+
+    try {
+      const subscribers = JSON.parse(
+        window.localStorage.getItem("streetlight-newsletter") || "[]",
+      );
+      subscribers.push({ email, joinedAt: new Date().toISOString() });
+      window.localStorage.setItem("streetlight-newsletter", JSON.stringify(subscribers));
+      setStatus("success");
+      setEmail("");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  return (
+    <section className="newsletter-capture">
+      <FadeIn>
+        <div className="newsletter-inner">
+          <div className="newsletter-copy">
+            <p className="section-tag">Stay in the Light</p>
+            <h2>New drops, without the noise.</h2>
+            <p>
+              Save your email for chapter updates, behind-the-scenes notes, and
+              future Streetlight lore.
+            </p>
+          </div>
+
+          {status === "success" ? (
+            <div className="newsletter-success" role="status">
+              <span aria-hidden="true">Saved</span>
+              <p>Saved on this device. Connect a newsletter backend before launch.</p>
+            </div>
+          ) : (
+            <form className="newsletter-form" onSubmit={handleSubmit}>
+              <div className="newsletter-field">
+                <label htmlFor="newsletter-email" className="sr-only">
+                  Email address
+                </label>
+                <input
+                  id="newsletter-email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    if (status === "error") {
+                      setStatus("idle");
+                    }
+                  }}
+                  placeholder="your@email.com"
+                  required
+                  disabled={status === "submitting"}
+                />
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={status === "submitting"}
+                >
+                  {status === "submitting" ? "Saving..." : "Notify me"}
+                </button>
+              </div>
+              {status === "error" ? (
+                <p className="newsletter-error" role="alert">
+                  Enter a valid email address.
+                </p>
+              ) : null}
+              <p className="newsletter-note">
+                Placeholder signup. A real email service still needs to be connected.
+              </p>
+            </form>
+          )}
+        </div>
+      </FadeIn>
+    </section>
+  );
+}

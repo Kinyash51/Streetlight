@@ -1,37 +1,62 @@
+import Link from "next/link";
+import FadeIn from "./FadeIn";
+
+const quotes = [
+  {
+    text: "Streetlight feels like a city that's alive.",
+    author: "Early Reader",
+    detail: "Chapter One response",
+  },
+  {
+    text: "Dark, beautiful, and haunting.",
+    author: "Beta Reader",
+    detail: "Early draft note",
+  },
+  {
+    text: "I kept thinking about the characters long after reading.",
+    author: "Community Member",
+    detail: "Reader feedback",
+  },
+];
+
 export default function ReaderQuotes() {
-    const quotes = [
-      {
-        text: "Streetlight feels like a city that's alive.",
-        author: "Early Reader",
-      },
-      {
-        text: "Dark, beautiful, and haunting.",
-        author: "Beta Reader",
-      },
-      {
-        text: "I kept thinking about the characters long after reading.",
-        author: "Community Member",
-      },
-    ];
-  
-    return (
-      <section className="quotes-section">
+  return (
+    <section className="quotes-section">
+      <FadeIn>
         <div className="section-head">
           <p className="section-tag">Reader Reactions</p>
           <h2>What readers are saying</h2>
+          <p>Early notes from people reading the Streetlight world.</p>
         </div>
-  
-        <div className="quotes-grid">
-          {quotes.map((quote, index) => (
+      </FadeIn>
+
+      <div className="quotes-grid">
+        {quotes.map((quote, index) => (
+          <FadeIn key={quote.text}>
             <div className="quote-card" key={index}>
-              <div className="stars">★★★★★</div>
-  
-              <p>&quot;{quote.text}&quot;</p>
-  
-              <span>— {quote.author}</span>
+              <div className="stars" aria-label="Five star reader note">
+                ★★★★★
+              </div>
+
+              <blockquote>
+                <p>&quot;{quote.text}&quot;</p>
+              </blockquote>
+
+              <footer className="quote-footer">
+                <strong>{quote.author}</strong>
+                <span>{quote.detail}</span>
+              </footer>
             </div>
-          ))}
-        </div>
-      </section>
-    );
-  }
+          </FadeIn>
+        ))}
+      </div>
+
+      <div className="quotes-cta">
+        <p>Start with the first chapter, then decide if the city keeps you.</p>
+        <Link href="/read/chapter-one" className="btn-primary">
+          Start Reading Free
+        </Link>
+      </div>
+    </section>
+  );
+}

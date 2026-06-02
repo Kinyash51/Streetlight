@@ -4,16 +4,24 @@ import WhyStreetlight from "@/components/whyStreetlight";
 import UniversePreview from "@/components/UniversePreview";
 import CommunityCTA from "@/components/CommunityCTA";
 import ReaderQuotes from "@/components/ReaderQuotes";
+import NewsletterCapture from "@/components/NewsletterCapture";
+import ScrollProgress from "@/components/ScrollProgress";
+import StickyMobileCTA from "@/components/StickyMobileCTA";
 
 export default function HomePage() {
   return (
-    <main>
-      <Hero />
-      <FeaturedBook />
-      <WhyStreetlight />
-      <ReaderQuotes />
-      <UniversePreview />
-      <CommunityCTA />
-    </main>
+    <>
+      <ScrollProgress />
+      <main>
+        <Hero />
+        <FeaturedBook />
+        <WhyStreetlight />
+        <ReaderQuotes />
+        <UniversePreview />
+        <CommunityCTA />
+      </main>
+      <NewsletterCapture />
+      <StickyMobileCTA />
+    </>
   );
 }
