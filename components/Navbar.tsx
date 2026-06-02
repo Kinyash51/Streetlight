@@ -1,14 +1,52 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
+  const isReaderPage = pathname.startsWith("/read/");
+  const navHidden = isReaderPage && hidden;
+  const navScrolled = isReaderPage && scrolled;
+
+  useEffect(() => {
+    if (!isReaderPage) {
+      return;
+    }
+
+    let lastScrollY = window.scrollY;
+
+    function handleScroll() {
+      const currentScrollY = window.scrollY;
+
+      setScrolled(currentScrollY > 80);
+
+      if (open || currentScrollY < 120) {
+        setHidden(false);
+      } else {
+        setHidden(currentScrollY > lastScrollY);
+      }
+
+      lastScrollY = currentScrollY;
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isReaderPage, open]);
 
   return (
     <>
-      <nav className="sl-nav">
+      <nav
+        className={`sl-nav ${isReaderPage ? "reader-nav" : ""} ${
+          navHidden ? "nav-hidden" : ""
+        } ${navScrolled ? "nav-scrolled" : ""}`}
+      >
         <div className="nav-inner">
           <Link href="/" className="nav-logo" onClick={() => setOpen(false)}>
             <span className="logo-lamp">💡</span>

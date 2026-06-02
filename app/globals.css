@@ -130,6 +130,19 @@ overflow: hidden;
   border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
+.sl-nav.reader-nav {
+  transition: transform .28s ease, background .22s ease, box-shadow .22s ease;
+}
+
+.sl-nav.reader-nav.nav-hidden {
+  transform: translateY(-100%);
+}
+
+.sl-nav.reader-nav.nav-scrolled {
+  background: rgba(9, 9, 10, .98);
+  box-shadow: 0 10px 34px rgba(0,0,0,.28);
+}
+
 .nav-inner {
   max-width: 1200px;
   margin: 0 auto;
