@@ -132,7 +132,6 @@ export default function DashboardPage() {
             username:
               currentUser.user_metadata?.user_name ??
               currentUser.user_metadata?.name ??
-              currentUser.email?.split("@")[0] ??
               null,
           },
           { onConflict: "id" }
@@ -241,7 +240,7 @@ export default function DashboardPage() {
   }
 
   const profileName =
-    profile?.username ?? user?.email?.split("@")[0] ?? "Streetlight Reader";
+    profile?.username ?? user?.user_metadata?.name ?? "Streetlight Reader";
   const profileEmail = profile?.email ?? user?.email;
   const membershipStatus = access.membership;
   const progressPercent = readerProgress?.progressPercent ?? 0;

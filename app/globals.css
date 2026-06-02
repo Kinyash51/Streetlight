@@ -1043,6 +1043,62 @@ overflow: hidden;
   cursor: pointer;
 }
 
+.account-profile-card {
+  background:
+    radial-gradient(circle at 8% 12%, rgba(240,165,0,.12), transparent 30%),
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018)),
+    var(--black-card);
+}
+
+.account-name-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.account-name-form label {
+  grid-column: 1 / -1;
+  color: var(--text-secondary);
+  font-size: .78rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.account-name-form input {
+  min-height: 48px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(9,9,10,.72);
+  color: var(--text-primary);
+  padding: 12px 14px;
+  font: inherit;
+}
+
+.account-name-form input:focus {
+  border-color: rgba(240,165,0,.52);
+  box-shadow: 0 0 0 3px rgba(240,165,0,.08);
+  outline: 0;
+}
+
+.account-name-form button {
+  border: 0;
+  cursor: pointer;
+}
+
+.account-name-form button:disabled,
+.account-name-form input:disabled {
+  cursor: not-allowed;
+  opacity: .68;
+}
+
+.account-name-message {
+  margin: 12px 0 0;
+  color: var(--amber);
+  font-size: .9rem;
+}
+
 .why-streetlight {
   padding: 120px 24px;
   background: var(--black-soft);
@@ -2530,6 +2586,14 @@ overflow: hidden;
   .reader-panel h3,
   .dashboard-secondary h3 {
     overflow-wrap: anywhere;
+  }
+
+  .account-name-form {
+    grid-template-columns: 1fr;
+  }
+
+  .account-name-form button {
+    width: 100%;
   }
 
   .checkout-hero {

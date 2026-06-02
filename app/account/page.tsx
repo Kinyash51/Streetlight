@@ -24,6 +24,9 @@ export default function AccountPage() {
     ebookOwned: false,
     membership: pricing.freeReader.name,
   });
+  const [displayName, setDisplayName] = useState("");
+  const [savingName, setSavingName] = useState(false);
+  const [nameMessage, setNameMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -70,7 +73,14 @@ export default function AccountPage() {
             ? pricing.supporter.name
             : pricing.freeReader.name;
 
-      setProfile((profileRow as Profile | null) ?? null);
+      const loadedProfile = (profileRow as Profile | null) ?? null;
+      const loadedName =
+        loadedProfile?.username ??
+        currentUser.user_metadata?.name ??
+        "";
+
+      setProfile(loadedProfile);
+      setDisplayName(loadedName);
       setAccess({
         ebookOwned: Boolean(orders?.length),
         membership,
@@ -86,10 +96,54 @@ export default function AccountPage() {
     window.location.replace("/login");
   }
 
+  async function saveDisplayName() {
+    if (!user) {
+      return;
+    }
+
+    const trimmedName = displayName.trim();
+
+    if (trimmedName.length < 2) {
+      setNameMessage("Use at least 2 characters.");
+      return;
+    }
+
+    if (trimmedName.length > 40) {
+      setNameMessage("Keep your display name under 40 characters.");
+      return;
+    }
+
+    setSavingName(true);
+    setNameMessage(null);
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .upsert(
+        {
+          id: user.id,
+          email: user.email ?? null,
+          username: trimmedName,
+        },
+        { onConflict: "id" }
+      )
+      .select("id, email, username")
+      .single();
+
+    setSavingName(false);
+
+    if (error) {
+      setNameMessage("Could not save your display name. Try again.");
+      return;
+    }
+
+    setProfile(data as Profile);
+    setDisplayName(trimmedName);
+    setNameMessage("Display name saved.");
+  }
+
   const accountName =
     profile?.username ??
     user?.user_metadata?.name ??
-    user?.email?.split("@")[0] ??
     "Streetlight Reader";
   const accountEmail = profile?.email ?? user?.email ?? "No email found";
 
@@ -115,6 +169,47 @@ export default function AccountPage() {
         </div>
 
         <section className="account-grid" aria-label="Account settings">
+          <article className="reader-panel account-wide account-profile-card">
+            <p className="reader-kicker">Profile</p>
+            <h2>Display name</h2>
+            <p className="dashboard-muted">
+              This is the name Streetlight uses on your dashboard.
+            </p>
+
+            <div className="account-name-form">
+              <label htmlFor="display-name">Display name</label>
+              <input
+                id="display-name"
+                type="text"
+                value={displayName}
+                maxLength={40}
+                placeholder="Trevor"
+                onChange={(event) => {
+                  setDisplayName(event.target.value);
+                  setNameMessage(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    saveDisplayName();
+                  }
+                }}
+                disabled={savingName}
+              />
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={saveDisplayName}
+                disabled={savingName}
+              >
+                {savingName ? "Saving..." : "Save Display Name"}
+              </button>
+            </div>
+
+            {nameMessage ? (
+              <p className="account-name-message">{nameMessage}</p>
+            ) : null}
+          </article>
+
           <article className="reader-panel">
             <p className="reader-kicker">Membership</p>
             <h2>{access.membership}</h2>
