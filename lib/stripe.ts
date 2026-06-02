@@ -129,6 +129,50 @@ export async function createStripeCheckoutSession({
   return data;
 }
 
+export async function createBillingPortalSession({
+  customerId,
+  returnUrl,
+}: {
+  customerId: string;
+  returnUrl: string;
+}) {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+  if (!stripeSecretKey) {
+    throw new Error("Missing STRIPE_SECRET_KEY.");
+  }
+
+  const params = new URLSearchParams({
+    customer: customerId,
+    return_url: returnUrl,
+  });
+
+  const response = await fetch("https://api.stripe.com/v1/billing_portal/sessions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${stripeSecretKey}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Stripe-Version": stripeApiVersion,
+    },
+    body: params,
+  });
+
+  const data = (await response.json()) as {
+    url?: string | null;
+    error?: { message?: string };
+  };
+
+  if (!response.ok) {
+    throw new Error(data.error?.message ?? "Unable to create billing portal session.");
+  }
+
+  if (!data.url) {
+    throw new Error("Stripe did not return a billing portal URL.");
+  }
+
+  return data.url;
+}
+
 export async function verifyStripeWebhookEvent(
   payload: string,
   signatureHeader: string | null

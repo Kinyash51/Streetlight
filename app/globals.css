@@ -5530,3 +5530,12 @@ overflow: hidden;
     grid-template-columns: 1fr;
   }
 }
+
+.billing-portal-form {
+  margin-top: 16px;
+}
+
+.billing-portal-form .dashboard-action {
+  width: 100%;
+  justify-content: center;
+}
