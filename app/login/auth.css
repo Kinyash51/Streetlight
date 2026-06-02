@@ -247,6 +247,55 @@
   font-size: 0.82rem;
   margin: 0 0 24px;
 }
+
+.auth-code-panel {
+  display: grid;
+  gap: 12px;
+  margin: 22px 0;
+  padding: 18px;
+  border: 1px solid rgba(240,165,0,.22);
+  border-radius: 16px;
+  background: rgba(240,165,0,.06);
+}
+
+.auth-code-panel p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: .86rem;
+  line-height: 1.6;
+}
+
+.auth-code-panel label {
+  color: var(--text-secondary);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.auth-code-panel input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  background: var(--black);
+  color: var(--text-primary);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 1.25rem;
+  letter-spacing: .18em;
+  outline: none;
+  text-align: center;
+}
+
+.auth-code-panel input:focus {
+  border-color: rgba(240,165,0,.45);
+  box-shadow: 0 0 0 3px rgba(240,165,0,.08);
+}
+
+.auth-code-panel .btn-primary {
+  width: 100%;
+}
 .auth-text-btn {
   background: none;
   border: none;

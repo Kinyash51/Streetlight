@@ -1,0 +1,421 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import type { Chapter } from "@/lib/chapters";
+import {
+  readLocalHighlights,
+  writeLocalHighlights,
+  type LocalHighlight,
+} from "@/lib/local-highlights";
+import { pricing } from "@/lib/pricing";
+
+type ReaderMode = "scroll" | "page";
+type ReaderTheme = "dark" | "amber" | "paper";
+
+type ReaderChapterProps = {
+  chapter: Chapter;
+};
+
+const readerSettingsKey = "streetlight-reader-settings";
+const readerProgressKey = "streetlight-reader-progress";
+
+const defaultReaderSettings: ReaderSettings = {
+  mode: "scroll",
+  theme: "dark",
+  fontScale: 1,
+  wide: false,
+};
+
+type ReaderSettings = {
+  mode: ReaderMode;
+  theme: ReaderTheme;
+  fontScale: number;
+  wide: boolean;
+};
+
+type ReaderProgress = {
+  chapterSlug: string;
+  chapterTitle: string;
+  mode: ReaderMode;
+  pageIndex: number;
+  progressPercent: number;
+  lastOpenedAt: string;
+};
+
+function writeReaderProgress(progressSnapshot: ReaderProgress) {
+  window.localStorage.setItem(readerProgressKey, JSON.stringify(progressSnapshot));
+}
+
+function isReaderMode(value: unknown): value is ReaderMode {
+  return value === "scroll" || value === "page";
+}
+
+function isReaderTheme(value: unknown): value is ReaderTheme {
+  return value === "dark" || value === "amber" || value === "paper";
+}
+
+function readSavedReaderSettings(): ReaderSettings {
+  if (typeof window === "undefined") {
+    return defaultReaderSettings;
+  }
+
+  const savedSettings = window.localStorage.getItem(readerSettingsKey);
+
+  if (!savedSettings) {
+    return defaultReaderSettings;
+  }
+
+  try {
+    const parsedSettings = JSON.parse(savedSettings) as Partial<ReaderSettings>;
+
+    return {
+      mode: isReaderMode(parsedSettings.mode)
+        ? parsedSettings.mode
+        : defaultReaderSettings.mode,
+      theme: isReaderTheme(parsedSettings.theme)
+        ? parsedSettings.theme
+        : defaultReaderSettings.theme,
+      fontScale:
+        typeof parsedSettings.fontScale === "number"
+          ? Math.min(1.25, Math.max(0.9, parsedSettings.fontScale))
+          : defaultReaderSettings.fontScale,
+      wide:
+        typeof parsedSettings.wide === "boolean"
+          ? parsedSettings.wide
+          : defaultReaderSettings.wide,
+    };
+  } catch {
+    window.localStorage.removeItem(readerSettingsKey);
+    return defaultReaderSettings;
+  }
+}
+
+export default function ReaderChapter({ chapter }: ReaderChapterProps) {
+  const [settings, setSettings] = useState<ReaderSettings>(defaultReaderSettings);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(25);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedText, setSelectedText] = useState("");
+  const [highlightSaved, setHighlightSaved] = useState(false);
+  const { fontScale, mode, theme, wide } = settings;
+
+  useEffect(() => {
+    const savedSettings = readSavedReaderSettings();
+    window.setTimeout(() => setSettings(savedSettings), 0);
+  }, []);
+
+  const pages = useMemo(
+    () => [
+      [chapter.intro, ...chapter.paragraphs.slice(0, 2)],
+      chapter.paragraphs.slice(2),
+    ],
+    [chapter]
+  );
+  const currentPage = pages[pageIndex] ?? pages[0];
+  const progress =
+    mode === "page"
+      ? Math.round(((pageIndex + 1) / pages.length) * 100)
+      : scrollProgress;
+
+  function saveSettings(nextSettings: ReaderSettings) {
+    setSettings(nextSettings);
+    window.localStorage.setItem(readerSettingsKey, JSON.stringify(nextSettings));
+  }
+
+  const saveProgress = useCallback((
+    progressPercent: number,
+    nextPageIndex: number,
+    nextMode: ReaderMode
+  ) => {
+    const progressSnapshot: ReaderProgress = {
+      chapterSlug: chapter.slug,
+      chapterTitle: chapter.title,
+      mode: nextMode,
+      pageIndex: nextPageIndex,
+      progressPercent,
+      lastOpenedAt: new Date().toISOString(),
+    };
+
+    writeReaderProgress(progressSnapshot);
+  }, [chapter.slug, chapter.title]);
+
+  useEffect(() => {
+    saveProgress(progress, pageIndex, mode);
+  }, [mode, pageIndex, progress, saveProgress]);
+
+  useEffect(() => {
+    if (mode !== "scroll") {
+      return;
+    }
+
+    function updateScrollProgress() {
+      const manuscript = document.querySelector(".reader-manuscript");
+
+      if (!manuscript) {
+        return;
+      }
+
+      const rect = manuscript.getBoundingClientRect();
+      const readableDistance = rect.height + window.innerHeight;
+      const readDistance = window.innerHeight - rect.top;
+      const percent = Math.min(
+        100,
+        Math.max(5, Math.round((readDistance / readableDistance) * 100))
+      );
+
+      setScrollProgress(percent);
+      saveProgress(percent, 0, "scroll");
+    }
+
+    window.addEventListener("scroll", updateScrollProgress, { passive: true });
+    const timer = window.setTimeout(updateScrollProgress, 0);
+
+    return () => {
+      window.removeEventListener("scroll", updateScrollProgress);
+      window.clearTimeout(timer);
+    };
+  }, [mode, saveProgress]);
+
+  function updatePageIndex(nextPageIndex: number) {
+    setPageIndex(nextPageIndex);
+    saveProgress(
+      Math.round(((nextPageIndex + 1) / pages.length) * 100),
+      nextPageIndex,
+      "page"
+    );
+  }
+
+  function decreaseFont() {
+    saveSettings({
+      ...settings,
+      fontScale: Math.max(0.9, Number((fontScale - 0.05).toFixed(2))),
+    });
+  }
+
+  function increaseFont() {
+    saveSettings({
+      ...settings,
+      fontScale: Math.min(1.25, Number((fontScale + 0.05).toFixed(2))),
+    });
+  }
+
+  function captureSelection() {
+    const selection = window.getSelection();
+    const text = selection?.toString().trim() ?? "";
+
+    setHighlightSaved(false);
+
+    if (text.length < 3) {
+      setSelectedText("");
+      return;
+    }
+
+    setSelectedText(text.slice(0, 600));
+  }
+
+  function saveHighlight() {
+    if (!selectedText) {
+      return;
+    }
+
+    const nextHighlight: LocalHighlight = {
+      id: `${Date.now()}`,
+      chapterSlug: chapter.slug,
+      chapterTitle: chapter.title,
+      text: selectedText,
+      createdAt: new Date().toISOString(),
+    };
+    const highlights = readLocalHighlights();
+
+    writeLocalHighlights([nextHighlight, ...highlights].slice(0, 50));
+    window.getSelection()?.removeAllRanges();
+    setSelectedText("");
+    setHighlightSaved(true);
+  }
+
+  return (
+    <main className={`reader-page reader-theme-${theme}`}>
+      <section className="reader-chrome">
+        <div>
+          <Link href="/dashboard" className="reader-back">
+            Back to dashboard
+          </Link>
+          <p className="section-tag">{chapter.book}</p>
+          <h1>{chapter.title}</h1>
+        </div>
+
+        <div className="reader-progress" aria-label={`${progress}% complete`}>
+          <span style={{ width: `${progress}%` }} />
+        </div>
+        <p className="reader-settings-note">
+          Reader settings save on this device.
+        </p>
+      </section>
+
+      <section className="reader-toolbar" aria-label="Reader controls">
+        <div className="reader-toggle" aria-label="Reading mode">
+          <button
+            type="button"
+            className={mode === "scroll" ? "active" : ""}
+            onClick={() => {
+              saveSettings({ ...settings, mode: "scroll" });
+              setPageIndex(0);
+            }}
+          >
+            Scroll
+          </button>
+          <button
+            type="button"
+            className={mode === "page" ? "active" : ""}
+            onClick={() => saveSettings({ ...settings, mode: "page" })}
+          >
+            Page
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className={settingsOpen ? "reader-settings-button active" : "reader-settings-button"}
+          aria-expanded={settingsOpen}
+          onClick={() => setSettingsOpen((value) => !value)}
+        >
+          Settings
+        </button>
+
+        <div className={settingsOpen ? "reader-settings open" : "reader-settings"}>
+          <div className="reader-control-group" aria-label="Font size">
+            <button type="button" onClick={decreaseFont}>
+              A-
+            </button>
+            <span>{Math.round(fontScale * 100)}%</span>
+            <button type="button" onClick={increaseFont}>
+              A+
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className={wide ? "reader-tool active" : "reader-tool"}
+            onClick={() => saveSettings({ ...settings, wide: !wide })}
+          >
+            {wide ? "Focused width" : "Wide width"}
+          </button>
+
+          <div className="reader-toggle" aria-label="Reader theme">
+            <button
+              type="button"
+              className={theme === "dark" ? "active" : ""}
+              onClick={() => saveSettings({ ...settings, theme: "dark" })}
+            >
+              Dark
+            </button>
+            <button
+              type="button"
+              className={theme === "amber" ? "active" : ""}
+              onClick={() => saveSettings({ ...settings, theme: "amber" })}
+            >
+              Amber
+            </button>
+            <button
+              type="button"
+              className={theme === "paper" ? "active" : ""}
+              onClick={() => saveSettings({ ...settings, theme: "paper" })}
+            >
+              Paper
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <article
+        className={`reader-manuscript ${wide ? "wide" : ""} ${
+          mode === "page" ? "paged" : ""
+        }`}
+        style={{ fontSize: `${fontScale}rem` }}
+        onMouseUp={captureSelection}
+        onTouchEnd={captureSelection}
+      >
+        <p className="reader-kicker">{chapter.eyebrow}</p>
+
+        {mode === "scroll" ? (
+          <>
+            <p className="reader-intro">{chapter.intro}</p>
+            {chapter.paragraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </>
+        ) : (
+          <>
+            {currentPage.map((paragraph, index) =>
+              pageIndex === 0 && index === 0 ? (
+                <p className="reader-intro" key={paragraph}>
+                  {paragraph}
+                </p>
+              ) : (
+                <p key={paragraph}>{paragraph}</p>
+              )
+            )}
+            <div className="page-controls">
+              <button
+                type="button"
+                className="btn-ghost"
+                disabled={pageIndex === 0}
+                onClick={() => updatePageIndex(Math.max(0, pageIndex - 1))}
+              >
+                Previous
+              </button>
+              <span>
+                Page {pageIndex + 1} of {pages.length}
+              </span>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={pageIndex === pages.length - 1}
+                onClick={() =>
+                  updatePageIndex(Math.min(pages.length - 1, pageIndex + 1))
+                }
+              >
+                Next
+              </button>
+            </div>
+          </>
+        )}
+      </article>
+
+      {(selectedText || highlightSaved) && (
+        <section className="highlight-save-bar" aria-live="polite">
+          {selectedText ? (
+            <>
+              <p>
+                Save highlight: <span>{selectedText}</span>
+              </p>
+              <button type="button" className="btn-primary" onClick={saveHighlight}>
+                Save Highlight
+              </button>
+            </>
+          ) : (
+            <>
+              <p>Highlight saved locally.</p>
+              <Link href="/highlights" className="btn-ghost">
+                View Highlights
+              </Link>
+            </>
+          )}
+        </section>
+      )}
+
+      <section className="reader-endcap">
+        <p className="section-tag">End of Preview</p>
+        <h2>Want the rest of the story?</h2>
+        <p>
+          Continue exploring the rain-soaked world of Streetlight and discover
+          what waits beneath the city.
+        </p>
+        <Link href={pricing.ebook.href} className="btn-primary">
+          Buy the eBook for {pricing.ebook.price}
+        </Link>
+      </section>
+    </main>
+  );
+}

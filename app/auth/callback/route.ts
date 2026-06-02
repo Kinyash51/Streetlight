@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const authError = requestUrl.searchParams.get("error");
-  const next = requestUrl.searchParams.get("next") ?? "/dashboard";
+  const next = requestUrl.searchParams.get("next") ?? "/welcome";
   const safeNext = next.startsWith("/") ? next : "/dashboard";
   const redirectUrl = new URL(safeNext, requestUrl.origin);
 

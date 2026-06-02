@@ -29,7 +29,7 @@ export default function BookPage() {
           </p>
 
           <div className="book-actions">
-            <Link href="/read" className="btn-ghost">
+            <Link href="/read/chapter-one" className="btn-ghost">
               Read Chapter One
             </Link>
 

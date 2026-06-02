@@ -12,7 +12,7 @@ const tiers = [
       "Community updates",
       "No account needed",
     ],
-    href: "/read",
+    href: "/read/chapter-one",
     cta: "Start Reading",
   },
   {

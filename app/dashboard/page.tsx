@@ -18,6 +18,79 @@ type AccountAccess = {
   membership: string;
 };
 
+type LocalReaderProgress = {
+  chapterSlug: string;
+  chapterTitle: string;
+  mode: "scroll" | "page";
+  pageIndex: number;
+  progressPercent: number;
+  lastOpenedAt: string;
+};
+
+const readerProgressKey = "streetlight-reader-progress";
+
+function readLocalReaderProgress(): LocalReaderProgress | null {
+  const savedProgress = window.localStorage.getItem(readerProgressKey);
+
+  if (!savedProgress) {
+    return null;
+  }
+
+  try {
+    const parsedProgress = JSON.parse(savedProgress) as Partial<LocalReaderProgress>;
+
+    if (
+      typeof parsedProgress.chapterSlug !== "string" ||
+      typeof parsedProgress.chapterTitle !== "string" ||
+      typeof parsedProgress.progressPercent !== "number" ||
+      typeof parsedProgress.lastOpenedAt !== "string"
+    ) {
+      return null;
+    }
+
+    return {
+      chapterSlug: parsedProgress.chapterSlug,
+      chapterTitle: parsedProgress.chapterTitle,
+      mode: parsedProgress.mode === "page" ? "page" : "scroll",
+      pageIndex:
+        typeof parsedProgress.pageIndex === "number"
+          ? parsedProgress.pageIndex
+          : 0,
+      progressPercent: Math.min(100, Math.max(0, parsedProgress.progressPercent)),
+      lastOpenedAt: parsedProgress.lastOpenedAt,
+    };
+  } catch {
+    window.localStorage.removeItem(readerProgressKey);
+    return null;
+  }
+}
+
+function formatLastOpened(lastOpenedAt: string) {
+  const timestamp = new Date(lastOpenedAt).getTime();
+
+  if (Number.isNaN(timestamp)) {
+    return "Saved locally";
+  }
+
+  const minutesAgo = Math.max(0, Math.round((Date.now() - timestamp) / 60000));
+
+  if (minutesAgo < 1) {
+    return "Opened just now";
+  }
+
+  if (minutesAgo < 60) {
+    return `Opened ${minutesAgo} min ago`;
+  }
+
+  const hoursAgo = Math.round(minutesAgo / 60);
+
+  if (hoursAgo < 24) {
+    return `Opened ${hoursAgo} hr ago`;
+  }
+
+  return "Opened earlier";
+}
+
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -26,6 +99,8 @@ export default function DashboardPage() {
     ebookOwned: false,
     membership: pricing.freeReader.name,
   });
+  const [readerProgress, setReaderProgress] =
+    useState<LocalReaderProgress | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function loadProfile(currentUser: User | null) {
@@ -120,6 +195,10 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
+    const progressTimer = window.setTimeout(() => {
+      setReaderProgress(readLocalReaderProgress());
+    }, 0);
+
     async function loadSession() {
       const {
         data: { session },
@@ -143,7 +222,10 @@ export default function DashboardPage() {
       );
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      window.clearTimeout(progressTimer);
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function signOut() {
@@ -162,6 +244,13 @@ export default function DashboardPage() {
     profile?.username ?? user?.email?.split("@")[0] ?? "Streetlight Reader";
   const profileEmail = profile?.email ?? user?.email;
   const membershipStatus = access.membership;
+  const progressPercent = readerProgress?.progressPercent ?? 0;
+  const progressLabel = readerProgress
+    ? `${progressPercent}% preview`
+    : "Ready to begin";
+  const lastOpenedLabel = readerProgress
+    ? formatLastOpened(readerProgress.lastOpenedAt)
+    : "No saved progress yet";
 
   if (loading) {
     return (
@@ -194,56 +283,146 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="dashboard-page">
-      <section className="dashboard-hero">
-        <p className="section-tag">Reader Dashboard</p>
-        <h1>Welcome back to Streetlight.</h1>
-        <p>
-          Continue reading, check your membership, and follow what’s next in the
-          Streetlight universe.
-        </p>
-      </section>
+    <main className="dashboard-page reader-dashboard">
+      <section className="reader-shell">
+        <div className="reader-welcome">
+          <p className="section-tag">Reader Home</p>
+          <h1>Welcome back, {profileName}.</h1>
+          <p>
+            Pick up the story, check your access, and unlock more of The
+            Drowned Streetlamp when you are ready.
+          </p>
+        </div>
 
-      <section className="dashboard-grid">
-        <div className="dashboard-card">
-          <h2>Your Profile</h2>
-          <p>
-            <strong>Name:</strong> {profileName}
-          </p>
-          <p>
-            <strong>Email:</strong> {profileEmail}
-          </p>
-          {profileError ? (
+        <section className="reader-layout" aria-label="Streetlight reader dashboard">
+          <article className="reader-panel reader-feature">
+            <div>
+              <p className="reader-kicker">Continue Reading</p>
+              <h2>{pricing.ebook.name}</h2>
+              <p className="dashboard-muted">
+                Chapter One is ready. Start with the free preview, then unlock
+                the full eBook when you want the rest.
+              </p>
+            </div>
+
+            <div className="reader-book-row">
+              <span className="reader-chapter">Chapter One - Free preview</span>
+              <span className="access-pill">
+                {access.ebookOwned ? "Owned" : "Free preview"}
+              </span>
+            </div>
+
+            <div className="dashboard-progress">
+              <div>
+                <span>{lastOpenedLabel}</span>
+                <strong>{progressLabel}</strong>
+              </div>
+              <div className="dashboard-progress-track" aria-hidden="true">
+                <span style={{ width: `${Math.max(8, progressPercent)}%` }} />
+              </div>
+            </div>
+
+            <div className="reader-actions">
+              <Link href="/read/chapter-one" className="btn-primary">
+                Continue Chapter One
+              </Link>
+              {!access.ebookOwned ? (
+                <Link href={pricing.ebook.href} className="btn-ghost">
+                  Buy eBook - {pricing.ebook.price}
+                </Link>
+              ) : null}
+            </div>
+          </article>
+
+          <aside className="reader-side">
+            <article className="reader-panel">
+              <p className="reader-kicker">Your Tier</p>
+              <h3>{membershipStatus}</h3>
+              <div className="access-list">
+                <div>
+                  <span>Membership</span>
+                  <strong>{membershipStatus}</strong>
+                </div>
+                <div>
+                  <span>eBook</span>
+                  <strong>{access.ebookOwned ? "Purchased" : "Not purchased"}</strong>
+                </div>
+              </div>
+              <p className="dashboard-muted">
+                Free Reader access is active. Supporter and purchase status will
+                connect here as Stripe webhooks update Supabase.
+              </p>
+            </article>
+
+            <article className="reader-panel">
+              <p className="reader-kicker">Unlock More</p>
+              <div className="unlock-list">
+                {!access.ebookOwned ? (
+                  <Link href={pricing.ebook.href}>
+                    <span>Own the eBook</span>
+                    <strong>{pricing.ebook.price}</strong>
+                  </Link>
+                ) : null}
+                <Link href={pricing.supporter.href}>
+                  <span>Become Supporter</span>
+                  <strong>{pricing.supporter.price}</strong>
+                </Link>
+              </div>
+            </article>
+
+            <article className="reader-panel account-panel">
+              <p className="reader-kicker">Account</p>
+              <p>{profileEmail}</p>
+              {profileError ? (
+                <p className="dashboard-muted">
+                  Profile details could not be loaded yet. Using your Supabase
+                  auth account for now.
+                </p>
+              ) : null}
+              <div className="reader-actions">
+                <Link href="/account" className="btn-primary">
+                  Account Settings
+                </Link>
+                <button type="button" className="btn-ghost" onClick={signOut}>
+                  Sign out
+                </button>
+              </div>
+            </article>
+          </aside>
+        </section>
+
+        <section className="dashboard-secondary" aria-label="Reader updates">
+          <article className="reader-panel dashboard-drop-card">
+            <p className="reader-kicker">New Drops</p>
+            <h3>What is waiting next</h3>
+            <div className="dashboard-list">
+              <div>
+                <span>Chapter One</span>
+                <strong>Free preview live</strong>
+              </div>
+              <div>
+                <span>Reader progress</span>
+                <strong>Saving locally</strong>
+              </div>
+              <div>
+                <span>Supporter notes</span>
+                <strong>Coming after highlights</strong>
+              </div>
+            </div>
+          </article>
+
+          <article className="reader-panel dashboard-highlights-card">
+            <p className="reader-kicker">Highlights</p>
+            <h3>Saved passages</h3>
             <p className="dashboard-muted">
-              Profile details could not be loaded yet. Using your Supabase auth
-              account for now.
+              Select a passage in Chapter One, save it, and return to it from
+              your highlights library.
             </p>
-          ) : null}
-          <button type="button" className="btn-ghost" onClick={signOut}>
-            Sign out
-          </button>
-        </div>
-
-        <div className="dashboard-card">
-          <h2>Membership</h2>
-          <p className="membership-badge">{membershipStatus}</p>
-          <p className="dashboard-muted">
-            {access.ebookOwned
-              ? "The Drowned Streetlamp eBook is unlocked on this account."
-              : "The Drowned Streetlamp eBook has not been purchased on this account yet."}
-          </p>
-        </div>
-
-        <div className="dashboard-card dashboard-wide">
-          <h2>Continue Reading</h2>
-          <p className="dashboard-muted">
-            Start with Chapter One of The Drowned Streetlamp.
-          </p>
-
-          <Link href="/read" className="btn-primary dashboard-action">
-            Start Reading
-          </Link>
-        </div>
+            <Link href="/highlights" className="btn-ghost dashboard-action">
+              View Highlights
+            </Link>
+          </article>
+        </section>
       </section>
     </main>
   );

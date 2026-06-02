@@ -3,76 +3,76 @@ import { pricing } from "@/lib/pricing";
 
 export default function Page() {
   return (
-    <main className="checkout-page">
-      <section className="page-hero">
+    <main className="checkout-page refined-checkout">
+      <section className="checkout-hero">
         <p className="section-tag">Checkout</p>
-        <h1>Choose your Streetlight access.</h1>
+        <h1>Read the story. Support the world around it.</h1>
         <p>
-          Buy the eBook once, read free, or support the Streetlight universe
-          monthly.
+          Start free, own The Drowned Streetlamp with a one-time eBook purchase,
+          or support Streetlight monthly.
         </p>
       </section>
 
-      <section className="tiers-section">
-        <div className="tiers-grid">
-          <div className="tier-card">
-            <h3>{pricing.freeReader.name}</h3>
-            <div className="tier-price">{pricing.freeReader.price}</div>
-            <ul>
-              <li>✓ Chapter One access</li>
-              <li>✓ Community updates</li>
-              <li>✓ No payment required</li>
-            </ul>
-            <Link href="/read" className="btn-primary">
-              Start Reading
-            </Link>
+      <section className="checkout-shell" aria-label="Streetlight checkout options">
+        <article className="checkout-product">
+          <div className="checkout-product-copy">
+            <span className="tier-badge">One-Time</span>
+            <p className="reader-kicker">Featured Product</p>
+            <h2>{pricing.ebook.name}</h2>
+            <p>
+              Own the full eBook with a single purchase. This is not a
+              subscription and will connect to your reader account once purchase
+              tracking is active.
+            </p>
           </div>
 
-          <div className="tier-card featured">
-            <span className="tier-badge">One-Time</span>
-            <h3>{pricing.ebook.name}</h3>
-            <div className="tier-price">
-              {pricing.ebook.price} {pricing.ebook.billing}
-            </div>
-            <ul>
-              <li>✓ Full eBook access</li>
-              <li>✓ One-time purchase</li>
-              <li>✓ Not a subscription</li>
-            </ul>
+          <div className="checkout-price-box">
+            <span>{pricing.ebook.billing}</span>
+            <strong>{pricing.ebook.price}</strong>
             <Link href={pricing.ebook.href} className="btn-primary">
               Buy eBook
             </Link>
           </div>
+        </article>
 
-          <div className="tier-card">
+        <div className="checkout-secondary-grid">
+          <article className="checkout-card">
+            <p className="reader-kicker">Read Free</p>
+            <h3>{pricing.freeReader.name}</h3>
+            <div className="tier-price">{pricing.freeReader.price}</div>
+            <p>
+              Chapter One access, public updates, and a clean way into the
+              Streetlight world.
+            </p>
+            <Link href="/read/chapter-one" className="btn-ghost">
+              Start Reading
+            </Link>
+          </article>
+
+          <article className="checkout-card supporter-card">
+            <p className="reader-kicker">Support Monthly</p>
             <h3>{pricing.supporter.name}</h3>
             <div className="tier-price">{pricing.supporter.price}</div>
-            <ul>
-              <li>✓ Recurring monthly membership</li>
-              <li>✓ Early chapter previews</li>
-              <li>✓ Behind-the-scenes notes</li>
-            </ul>
+            <p>
+              A recurring monthly membership for early previews and behind the
+              scenes notes.
+            </p>
             <Link href={pricing.supporter.href} className="btn-primary">
               Become a Supporter
             </Link>
-          </div>
+          </article>
 
-          <div className="tier-card">
+          <article className="checkout-card">
             <span className="tier-badge">Coming Soon</span>
+            <p className="reader-kicker">Deeper Support</p>
             <h3>{pricing.patron.name}</h3>
             <div className="tier-price">{pricing.patron.price}</div>
-            <ul>
-              <li>✓ Recurring monthly membership</li>
-              <li>✓ Bonus stories</li>
-              <li>✓ Future patron-only extras</li>
-            </ul>
-            <form action="/api/checkout" method="post">
-              <input type="hidden" name="product" value={pricing.patron.checkoutProduct} />
-              <button type="submit" className="btn-primary">
-                Become a Patron
-              </button>
-            </form>
-          </div>
+            <p>
+              A recurring monthly patron tier for future bonus stories and
+              patron-only extras.
+            </p>
+            <span className="btn-ghost checkout-disabled">Coming Soon</span>
+          </article>
         </div>
       </section>
     </main>
