@@ -1842,6 +1842,14 @@ overflow: hidden;
 
 .checkout-hero {
   padding: 96px 0 12px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.checkout-hero p {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .checkout-product {
