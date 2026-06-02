@@ -949,6 +949,14 @@ overflow: hidden;
   box-shadow: 0 24px 70px rgba(0,0,0,.28);
 }
 
+.highlight-empty .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: 10px;
+}
+
 .highlight-card blockquote {
   margin: 0 0 24px;
   color: var(--text-primary);
@@ -1016,7 +1024,7 @@ overflow: hidden;
 .account-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 22px;
+  gap: 28px;
 }
 
 .account-grid h2 {
@@ -1578,6 +1586,12 @@ overflow: hidden;
   padding-top: 72px;
 }
 
+.reader-dashboard,
+.highlights-page,
+.account-page {
+  background-attachment: fixed;
+}
+
 .reader-shell,
 .checkout-shell {
   width: min(1120px, calc(100% - 48px));
@@ -1587,7 +1601,7 @@ overflow: hidden;
 .reader-welcome,
 .checkout-hero {
   max-width: 780px;
-  margin-bottom: 36px;
+  margin-bottom: 44px;
 }
 
 .reader-welcome h1,
@@ -1607,7 +1621,7 @@ overflow: hidden;
 .reader-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.75fr);
-  gap: 22px;
+  gap: 28px;
   align-items: start;
 }
 
@@ -1623,7 +1637,7 @@ overflow: hidden;
 }
 
 .reader-panel {
-  padding: 28px;
+  padding: clamp(26px, 3vw, 34px);
 }
 
 .reader-feature {
@@ -1631,6 +1645,7 @@ overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 34px;
   background:
     radial-gradient(circle at 85% 12%, rgba(240,165,0,.16), transparent 34%),
     linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018)),
@@ -1734,19 +1749,20 @@ overflow: hidden;
 .reader-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 16px;
+  margin-top: 8px;
 }
 
 .reader-side {
   display: grid;
-  gap: 18px;
+  gap: 22px;
 }
 
 .dashboard-secondary {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 22px;
-  margin-top: 22px;
+  gap: 28px;
+  margin-top: 28px;
 }
 
 .dashboard-secondary h3,
@@ -1758,7 +1774,7 @@ overflow: hidden;
 
 .dashboard-list {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .dashboard-list div {
@@ -1766,7 +1782,7 @@ overflow: hidden;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 14px 0;
+  padding: 16px 0;
   border-bottom: 1px solid var(--border);
 }
 
@@ -1796,13 +1812,13 @@ overflow: hidden;
 .access-list,
 .unlock-list {
   display: grid;
-  gap: 12px;
-  margin: 18px 0;
+  gap: 8px;
+  margin: 20px 0;
 }
 
 .access-list div,
 .unlock-list a {
-  padding: 14px 0;
+  padding: 16px 0;
   border-bottom: 1px solid var(--border);
 }
 
@@ -2109,6 +2125,12 @@ overflow: hidden;
 }
 
 @media (max-width: 900px) {
+  .dashboard-page,
+  .highlights-page,
+  .account-page {
+    padding: 64px 16px 104px;
+  }
+
   .reader-shell,
   .checkout-shell {
     width: min(100% - 32px, 1120px);
@@ -2130,9 +2152,66 @@ overflow: hidden;
     min-height: auto;
   }
 
-  .reader-book-row {
+  .reader-welcome,
+  .highlights-head,
+  .account-head {
+    margin-bottom: 30px;
+  }
+
+  .reader-panel,
+  .highlight-card,
+  .highlight-empty {
+    border-radius: 18px;
+    padding: 24px;
+  }
+
+  .reader-book-row,
+  .access-list div,
+  .unlock-list a,
+  .dashboard-list div,
+  .highlight-meta,
+  .success-status {
     align-items: flex-start;
     flex-direction: column;
+    gap: 8px;
+  }
+
+  .access-list strong,
+  .unlock-list strong,
+  .dashboard-list strong,
+  .success-status strong {
+    text-align: left;
+  }
+
+  .reader-actions,
+  .success-actions,
+  .welcome-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .reader-actions .btn-primary,
+  .reader-actions .btn-ghost,
+  .success-actions .btn-primary,
+  .success-actions .btn-ghost,
+  .welcome-actions .btn-primary,
+  .welcome-actions .btn-ghost,
+  .highlight-empty .btn-primary,
+  .highlight-meta .btn-ghost,
+  .dashboard-action,
+  .checkout-card .btn-primary,
+  .checkout-card .btn-ghost,
+  .checkout-price-box .btn-primary {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .account-grid h2,
+  .reader-panel h3,
+  .dashboard-secondary h3 {
+    overflow-wrap: anywhere;
   }
 
   .checkout-hero {
