@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export type SearchChapter = {
   slug: string;
@@ -64,6 +64,220 @@ function findResults(chapters: SearchChapter[], query: string): SearchResult[] {
   }
 
   return results;
+}
+
+type SearchTriggerProps = SearchPageProps;
+
+export function SearchTrigger({ chapters }: SearchTriggerProps) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    if (typeof window === "undefined") {
+      return [];
+    }
+
+    try {
+      const stored = window.localStorage.getItem("streetlight-recent-searches");
+      return stored ? JSON.parse(stored).slice(0, 4) : [];
+    } catch {
+      return [];
+    }
+  });
+  const inputRef = useRef<HTMLInputElement>(null);
+  const results = useMemo(() => findResults(chapters, query), [chapters, query]);
+  const activeIndex = results.length ? Math.min(selectedIndex, results.length - 1) : 0;
+  const suggestions = [query ? "" : "rain", query ? "" : "streetlamp", query ? "" : "memories"]
+    .filter(Boolean)
+    .slice(0, 3);
+
+  const rememberSearch = useCallback(
+    (term: string) => {
+      const cleanTerm = term.trim();
+
+      if (cleanTerm.length < 2) {
+        return;
+      }
+
+      const nextSearches = [
+        cleanTerm,
+        ...recentSearches.filter((search) => search !== cleanTerm),
+      ].slice(0, 4);
+
+      setRecentSearches(nextSearches);
+      window.localStorage.setItem(
+        "streetlight-recent-searches",
+        JSON.stringify(nextSearches),
+      );
+    },
+    [recentSearches],
+  );
+
+  useEffect(() => {
+    function handleShortcut(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSelectedIndex(0);
+        setOpen(true);
+      }
+    }
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    inputRef.current?.focus();
+
+    function handleModalKeys(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+
+      if (!results.length) {
+        return;
+      }
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setSelectedIndex((current) => (current + 1) % results.length);
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setSelectedIndex((current) => (current - 1 + results.length) % results.length);
+      }
+
+      if (event.key === "Enter") {
+        event.preventDefault();
+        rememberSearch(query);
+        window.location.href = `/read/${results[activeIndex].chapterSlug}`;
+      }
+    }
+
+    window.addEventListener("keydown", handleModalKeys);
+    return () => window.removeEventListener("keydown", handleModalKeys);
+  }, [activeIndex, open, query, rememberSearch, results]);
+
+  return (
+    <>
+      <button
+        type="button"
+        className="nav-search-icon"
+        onClick={() => {
+          setSelectedIndex(0);
+          setOpen(true);
+        }}
+        aria-label="Search Streetlight"
+      >
+        <span aria-hidden="true">Search</span>
+        <kbd>Ctrl K</kbd>
+      </button>
+
+      {open ? (
+        <div
+          className="search-overlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setOpen(false);
+            }
+          }}
+        >
+          <section
+            className="search-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search Streetlight"
+          >
+            <div className="search-modal-input-wrap">
+              <span className="search-modal-icon" aria-hidden="true">
+                Search
+              </span>
+              <input
+                ref={inputRef}
+                type="search"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setSelectedIndex(0);
+                }}
+                placeholder="Search rain, streetlamp, memory..."
+                className="search-modal-input"
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                className="search-modal-close"
+                onClick={() => setOpen(false)}
+              >
+                Esc
+              </button>
+            </div>
+
+            {query.length < 2 ? (
+              <div className="search-modal-section">
+                <p className="search-modal-label">
+                  {recentSearches.length ? "Recent searches" : "Try searching"}
+                </p>
+                <div className="search-modal-chips">
+                  {(recentSearches.length ? recentSearches : suggestions).map((item) => (
+                    <button
+                      type="button"
+                      className="search-modal-chip"
+                      key={item}
+                      onClick={() => setQuery(item)}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="search-modal-results" aria-live="polite">
+                {results.length ? (
+                  results.map((result, index) => (
+                    <Link
+                      href={`/read/${result.chapterSlug}`}
+                      className={`search-modal-result ${
+                        activeIndex === index ? "selected" : ""
+                      }`}
+                      key={result.id}
+                      onClick={() => rememberSearch(query)}
+                    >
+                      <span className="search-modal-result-title">
+                        {result.book} - {result.chapterTitle}
+                      </span>
+                      <span className="search-modal-result-context">
+                        {result.before} <mark>{result.match}</mark> {result.after}
+                      </span>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="search-modal-empty">
+                    <h2>No passage found.</h2>
+                    <p>Try a shorter phrase or another image from the chapter.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <footer className="search-modal-footer">
+              <span>Arrow keys to move</span>
+              <span>Enter to open</span>
+              <Link href="/search" onClick={() => setOpen(false)}>
+                Full search page
+              </Link>
+            </footer>
+          </section>
+        </div>
+      ) : null}
+    </>
+  );
 }
 
 export function SearchPage({ chapters }: SearchPageProps) {

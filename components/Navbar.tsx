@@ -3,6 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { SearchTrigger, type SearchChapter } from "@/components/Search";
+import { chapters } from "@/lib/chapters";
+
+const searchChapters: SearchChapter[] = chapters.map((chapter) => ({
+  slug: chapter.slug,
+  title: chapter.title,
+  book: chapter.book,
+  content: [chapter.eyebrow, chapter.intro, ...chapter.paragraphs].join("\n\n"),
+}));
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -59,8 +68,9 @@ export default function Navbar() {
             <Link href="/universe" className="nav-link">Universe</Link>
             <Link href="/community" className="nav-link">Community</Link>
             <Link href="/about" className="nav-link">About</Link>
-            <Link href="/search" className="nav-link">Search</Link>
           </div>
+
+          <SearchTrigger chapters={searchChapters} />
 
           <Link href="/checkout" className="nav-cta">
             Buy the Book
