@@ -706,6 +706,31 @@ overflow: hidden;
   margin: 0 0 20px;
 }
 
+.reader-meta-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px 16px;
+  margin: -8px 0 20px;
+  color: var(--text-secondary);
+  font-size: .84rem;
+}
+
+.reader-meta-bar span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reader-meta-bar span:not(:first-child)::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .45;
+}
+
 .reader-progress {
   height: 3px;
   overflow: hidden;
@@ -830,6 +855,15 @@ overflow: hidden;
   line-height: 1.55;
 }
 
+.reader-manuscript .reader-intro::first-letter {
+  float: left;
+  padding: .08em .14em 0 0;
+  color: var(--amber);
+  font-size: 3.6em;
+  font-weight: 700;
+  line-height: .78;
+}
+
 .reader-theme-paper .section-tag,
 .reader-theme-paper .reader-kicker,
 .reader-theme-paper .reader-back,
@@ -847,6 +881,10 @@ overflow: hidden;
 .reader-theme-paper .reader-manuscript p,
 .reader-theme-paper .reader-chrome h1 {
   color: #241b13;
+}
+
+.reader-theme-paper .reader-manuscript .reader-intro::first-letter {
+  color: #8a4f00;
 }
 
 .reader-theme-paper .reader-toggle,
@@ -928,6 +966,22 @@ overflow: hidden;
 
 .highlight-save-bar span {
   color: var(--text-primary);
+}
+
+.reader-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 80;
+  transform: translateX(-50%);
+  padding: 12px 18px;
+  border: 1px solid rgba(240,165,0,.26);
+  border-radius: 999px;
+  background: rgba(12,12,13,.92);
+  color: var(--text-primary);
+  box-shadow: 0 18px 60px rgba(0,0,0,.38);
+  backdrop-filter: blur(12px);
+  font-size: .9rem;
 }
 
 .highlights-page {

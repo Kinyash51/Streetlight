@@ -19,6 +19,7 @@ type ReaderChapterProps = {
 
 const readerSettingsKey = "streetlight-reader-settings";
 const readerProgressKey = "streetlight-reader-progress";
+const readerBookmarksKey = "streetlight-reader-bookmarks";
 
 const defaultReaderSettings: ReaderSettings = {
   mode: "scroll",
@@ -43,8 +44,34 @@ type ReaderProgress = {
   lastOpenedAt: string;
 };
 
+function estimateReadTime(chapter: Chapter) {
+  const wordCount = [chapter.intro, ...chapter.paragraphs].join(" ").split(/\s+/).length;
+  const minutes = Math.max(1, Math.ceil(wordCount / 210));
+
+  return `${minutes} min read`;
+}
+
 function writeReaderProgress(progressSnapshot: ReaderProgress) {
   window.localStorage.setItem(readerProgressKey, JSON.stringify(progressSnapshot));
+}
+
+function readBookmarks() {
+  const savedBookmarks = window.localStorage.getItem(readerBookmarksKey);
+
+  if (!savedBookmarks) {
+    return [];
+  }
+
+  try {
+    const parsedBookmarks = JSON.parse(savedBookmarks);
+
+    return Array.isArray(parsedBookmarks)
+      ? parsedBookmarks.filter((bookmark): bookmark is string => typeof bookmark === "string")
+      : [];
+  } catch {
+    window.localStorage.removeItem(readerBookmarksKey);
+    return [];
+  }
 }
 
 function isReaderMode(value: unknown): value is ReaderMode {
@@ -98,12 +125,23 @@ export default function ReaderChapter({ chapter }: ReaderChapterProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
   const [highlightSaved, setHighlightSaved] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   const { fontScale, mode, theme, wide } = settings;
+  const readTime = useMemo(() => estimateReadTime(chapter), [chapter]);
 
   useEffect(() => {
     const savedSettings = readSavedReaderSettings();
     window.setTimeout(() => setSettings(savedSettings), 0);
   }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setBookmarked(readBookmarks().includes(chapter.slug));
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [chapter.slug]);
 
   const pages = useMemo(
     () => [
@@ -117,6 +155,14 @@ export default function ReaderChapter({ chapter }: ReaderChapterProps) {
     mode === "page"
       ? Math.round(((pageIndex + 1) / pages.length) * 100)
       : scrollProgress;
+  const timeLeft = useMemo(() => {
+    const minutes = Math.max(
+      1,
+      Math.ceil(((100 - progress) / 100) * Number.parseInt(readTime, 10))
+    );
+
+    return progress >= 92 ? "Almost done" : `${minutes} min left`;
+  }, [progress, readTime]);
 
   function saveSettings(nextSettings: ReaderSettings) {
     setSettings(nextSettings);
@@ -232,6 +278,20 @@ export default function ReaderChapter({ chapter }: ReaderChapterProps) {
     window.getSelection()?.removeAllRanges();
     setSelectedText("");
     setHighlightSaved(true);
+    setToastMessage("Highlight saved locally.");
+    window.setTimeout(() => setToastMessage(""), 2400);
+  }
+
+  function toggleBookmark() {
+    const bookmarks = readBookmarks();
+    const nextBookmarks = bookmarked
+      ? bookmarks.filter((bookmark) => bookmark !== chapter.slug)
+      : [...new Set([chapter.slug, ...bookmarks])];
+
+    window.localStorage.setItem(readerBookmarksKey, JSON.stringify(nextBookmarks));
+    setBookmarked(!bookmarked);
+    setToastMessage(bookmarked ? "Bookmark removed." : "Bookmark saved locally.");
+    window.setTimeout(() => setToastMessage(""), 2400);
   }
 
   return (
@@ -243,6 +303,13 @@ export default function ReaderChapter({ chapter }: ReaderChapterProps) {
           </Link>
           <p className="section-tag">{chapter.book}</p>
           <h1>{chapter.title}</h1>
+          <div className="reader-meta-bar">
+            <span>Chapter One</span>
+            <span>Free preview</span>
+            <span>{readTime}</span>
+            <span>{timeLeft}</span>
+            <span>Saved locally</span>
+          </div>
         </div>
 
         <div className="reader-progress" aria-label={`${progress}% complete`}>
@@ -254,6 +321,15 @@ export default function ReaderChapter({ chapter }: ReaderChapterProps) {
       </section>
 
       <section className="reader-toolbar" aria-label="Reader controls">
+        <button
+          type="button"
+          className={bookmarked ? "reader-tool active" : "reader-tool"}
+          onClick={toggleBookmark}
+          aria-pressed={bookmarked}
+        >
+          {bookmarked ? "Bookmarked" : "Bookmark"}
+        </button>
+
         <div className="reader-toggle" aria-label="Reading mode">
           <button
             type="button"
@@ -404,6 +480,12 @@ export default function ReaderChapter({ chapter }: ReaderChapterProps) {
           )}
         </section>
       )}
+
+      {toastMessage ? (
+        <div className="reader-toast" role="status" aria-live="polite">
+          {toastMessage}
+        </div>
+      ) : null}
 
       <section className="reader-endcap">
         <p className="section-tag">End of Preview</p>
