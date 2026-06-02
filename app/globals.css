@@ -4858,3 +4858,339 @@ overflow: hidden;
     flex: 1;
   }
 }
+
+/* About page upgrade */
+.about-hero {
+  padding: 120px 24px 60px;
+  text-align: center;
+  background:
+    radial-gradient(circle at top, rgba(240,165,0,.12), transparent 35%),
+    var(--black);
+}
+
+.about-hero h1 {
+  margin: 12px 0 16px;
+  font-size: clamp(3.5rem, 8vw, 6.5rem);
+  line-height: 1.02;
+}
+
+.about-hero-sub {
+  max-width: 540px;
+  margin: 0 auto;
+  color: var(--text-secondary);
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+
+.about-statement {
+  padding: 80px 24px;
+  background: var(--black-soft);
+}
+
+.about-statement-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 64px;
+  align-items: start;
+}
+
+.about-portrait {
+  position: sticky;
+  top: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.about-portrait-placeholder {
+  width: 240px;
+  height: 240px;
+  border: 1px solid rgba(240,165,0,.25);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle, rgba(240,165,0,.22), transparent 70%),
+    var(--black-card);
+  color: var(--amber);
+  font-size: 4rem;
+  font-weight: 900;
+  letter-spacing: .05em;
+}
+
+.about-portrait-meta {
+  text-align: center;
+}
+
+.about-portrait-meta strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+  font-size: 1.18rem;
+}
+
+.about-portrait-meta span {
+  color: var(--text-secondary);
+  font-size: .9rem;
+}
+
+.about-statement-text h2 {
+  margin: 0 0 24px;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.08;
+}
+
+.about-statement-text p {
+  margin: 0 0 20px;
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.9;
+}
+
+.about-quote {
+  margin: 36px 0 0;
+  padding: 28px 32px;
+  border-left: 3px solid var(--amber);
+  border-radius: 0 16px 16px 0;
+  background: rgba(240,165,0,.06);
+}
+
+.about-quote p {
+  margin: 0 0 12px;
+  color: var(--text-primary);
+  font-size: 1.18rem;
+  font-style: italic;
+  line-height: 1.75;
+}
+
+.about-quote cite {
+  color: var(--text-secondary);
+  font-size: .9rem;
+  font-style: normal;
+}
+
+.about-timeline-section {
+  padding: 100px 24px;
+  background: var(--black);
+}
+
+.about-timeline-inner {
+  max-width: 840px;
+  margin: 0 auto;
+}
+
+.about-timeline-inner h2 {
+  margin: 12px 0 48px;
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  line-height: 1.08;
+}
+
+.about-timeline {
+  position: relative;
+  padding-left: 34px;
+}
+
+.about-timeline::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 6px;
+  width: 2px;
+  background: var(--border);
+}
+
+.about-timeline-item {
+  position: relative;
+  padding-bottom: 40px;
+}
+
+.about-timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.about-timeline-dot {
+  position: absolute;
+  top: 5px;
+  left: -34px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--amber);
+  border-radius: 50%;
+  background: var(--black);
+}
+
+.about-timeline-item:last-child .about-timeline-dot {
+  background: var(--amber);
+  box-shadow: 0 0 14px rgba(240,165,0,.45);
+}
+
+.about-timeline-year {
+  display: inline-flex;
+  margin-bottom: 9px;
+  border: 1px solid rgba(240,165,0,.22);
+  border-radius: 999px;
+  background: rgba(240,165,0,.1);
+  color: var(--amber);
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .1em;
+  padding: 5px 12px;
+  text-transform: uppercase;
+}
+
+.about-timeline-content h3 {
+  margin: 0 0 7px;
+  font-size: 1.3rem;
+}
+
+.about-timeline-content p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.75;
+}
+
+.about-influences {
+  padding: 100px 24px;
+  background: var(--black-soft);
+}
+
+.about-influences-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.about-influences-inner h2 {
+  margin: 12px 0 48px;
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  line-height: 1.08;
+}
+
+.influences-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.influence-card {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018)),
+    var(--black-card);
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+
+.influence-card:hover {
+  border-color: rgba(240,165,0,.28);
+  transform: translateY(-4px);
+}
+
+.influence-card h3 {
+  margin: 0 0 5px;
+  font-size: 1.2rem;
+}
+
+.influence-work {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--amber);
+  font-size: .85rem;
+  font-style: italic;
+}
+
+.influence-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: .95rem;
+  line-height: 1.7;
+}
+
+.about-connect {
+  padding: 100px 24px;
+  background:
+    radial-gradient(circle at center, rgba(240,165,0,.12), transparent 35%),
+    var(--black);
+  text-align: center;
+}
+
+.about-connect-inner {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.about-connect-inner h2 {
+  margin: 0 0 16px;
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  line-height: 1.08;
+}
+
+.about-connect-inner > p {
+  margin: 0 auto 32px;
+  color: var(--text-secondary);
+  font-size: 1.08rem;
+  line-height: 1.75;
+}
+
+.about-connect-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .about-statement-inner {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .about-portrait {
+    position: static;
+  }
+
+  .about-portrait-placeholder {
+    width: 180px;
+    height: 180px;
+    font-size: 3rem;
+  }
+
+  .influences-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .about-hero {
+    padding: 86px 18px 46px;
+  }
+
+  .about-statement,
+  .about-timeline-section,
+  .about-influences,
+  .about-connect {
+    padding-inline: 16px;
+  }
+
+  .about-quote {
+    padding: 20px 24px;
+  }
+
+  .about-quote p {
+    font-size: 1.05rem;
+  }
+
+  .about-connect-actions {
+    flex-direction: column;
+  }
+
+  .about-connect-actions .btn-primary,
+  .about-connect-actions .btn-ghost {
+    width: 100%;
+    justify-content: center;
+  }
+}
