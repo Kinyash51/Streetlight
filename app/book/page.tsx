@@ -1,7 +1,6 @@
-import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { getReaderAccess } from "@/lib/access-control";
-import { ReaderClient } from "@/components/reader-client";
+import ReaderChapter from "@/components/ReaderChapter";
 
 // Chapter data — you can move this to a CMS or database later
 const chapters = [
@@ -265,6 +264,28 @@ const chapters = [
   }
 ];
 
+function getReaderChapters() {
+  return chapters.map((chapter, index) => {
+    const paragraphs = chapter.content
+      .filter((block) => block.type === "paragraph")
+      .map((block) => block.text);
+
+    return {
+      slug: chapter.id,
+      book: "The Drowned Streetlamp",
+      title: chapter.title,
+      eyebrow: chapter.isFree ? "Free Preview" : "Supporter Chapter",
+      intro: paragraphs[0] || chapter.subtitle,
+      paragraphs: paragraphs.slice(1),
+      nextSlug: chapters[index + 1]?.id ?? null,
+      number: chapter.number,
+      subtitle: chapter.subtitle,
+      isFree: chapter.isFree,
+      wordCount: chapter.wordCount,
+    };
+  });
+}
+
 export default async function BookPage({
   searchParams,
 }: {
@@ -275,25 +296,19 @@ export default async function BookPage({
 
   const { data: { user } } = await supabase.auth.getUser();
   const access = await getReaderAccess(user?.id || null);
+  const readerChapters = getReaderChapters();
 
   // Get requested chapter or default to chapter one
   const requestedChapter = params.chapter || "chapter-one";
-  const currentChapterIndex = chapters.findIndex(c => c.id === requestedChapter);
-  const currentChapter = chapters[currentChapterIndex] || chapters[0];
-
-  // Check access for this chapter
-  const canReadCurrent = currentChapter.isFree || access.canReadFullBook;
-
-  // If trying to read locked chapter and not authorized, redirect to community
-  if (!canReadCurrent && !currentChapter.isFree) {
-    redirect("/community");
-  }
+  const currentChapter =
+    readerChapters.find((chapter) => chapter.slug === requestedChapter) ||
+    readerChapters[0];
 
   return (
     <div className="book-page">
-      <ReaderClient 
-        chapters={chapters}
-        currentChapterId={currentChapter.id}
+      <ReaderChapter
+        chapter={currentChapter}
+        chapters={readerChapters}
         access={{
           canReadChapterOne: access.canReadChapterOne,
           canReadFullBook: access.canReadFullBook,
@@ -302,6 +317,7 @@ export default async function BookPage({
           canAccessPatronExtras: access.canAccessPatronExtras,
         }}
         userId={user?.id || null}
+        basePath="/book"
       />
     </div>
   );

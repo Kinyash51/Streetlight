@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { Chapter } from "@/lib/chapters";
+import type { ClientAccess } from "@/lib/access-control";
 import {
   readLocalHighlights,
   writeLocalHighlights,
@@ -13,8 +13,26 @@ import { pricing } from "@/lib/pricing";
 type ReaderMode = "scroll" | "page";
 type ReaderTheme = "dark" | "amber" | "paper";
 
+type ReaderChapterData = {
+  slug: string;
+  book: string;
+  title: string;
+  eyebrow: string;
+  intro: string;
+  paragraphs: string[];
+  nextSlug: string | null;
+  number?: number;
+  subtitle?: string;
+  isFree?: boolean;
+  wordCount?: number;
+};
+
 type ReaderChapterProps = {
-  chapter: Chapter;
+  chapter: ReaderChapterData;
+  chapters?: ReaderChapterData[];
+  access?: ClientAccess;
+  userId?: string | null;
+  basePath?: "/read" | "/book";
 };
 
 const readerSettingsKey = "streetlight-reader-settings";
@@ -44,7 +62,7 @@ type ReaderProgress = {
   lastOpenedAt: string;
 };
 
-function estimateReadTime(chapter: Chapter) {
+function estimateReadTime(chapter: ReaderChapterData) {
   const wordCount = [chapter.intro, ...chapter.paragraphs].join(" ").split(/\s+/).length;
   const minutes = Math.max(1, Math.ceil(wordCount / 210));
 
@@ -118,7 +136,17 @@ function readSavedReaderSettings(): ReaderSettings {
   }
 }
 
-export default function ReaderChapter({ chapter }: ReaderChapterProps) {
+function getChapterHref(basePath: "/read" | "/book", slug: string) {
+  return basePath === "/book" ? `/book?chapter=${slug}` : `/read/${slug}`;
+}
+
+export default function ReaderChapter({
+  chapter,
+  chapters = [chapter],
+  access,
+  userId,
+  basePath = "/read",
+}: ReaderChapterProps) {
   const [settings, setSettings] = useState<ReaderSettings>(defaultReaderSettings);
   const [pageIndex, setPageIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(25);
@@ -129,6 +157,14 @@ export default function ReaderChapter({ chapter }: ReaderChapterProps) {
   const [toastMessage, setToastMessage] = useState("");
   const { fontScale, mode, theme, wide } = settings;
   const readTime = useMemo(() => estimateReadTime(chapter), [chapter]);
+  const canReadFullBook = access?.canReadFullBook ?? false;
+  const canReadCurrentChapter = chapter.isFree !== false || canReadFullBook;
+  const currentChapterIndex = chapters.findIndex((item) => item.slug === chapter.slug);
+  const nextChapter =
+    currentChapterIndex >= 0 ? chapters[currentChapterIndex + 1] ?? null : null;
+  const previousChapter =
+    currentChapterIndex > 0 ? chapters[currentChapterIndex - 1] ?? null : null;
+  const chapterLabel = chapter.number ? `Chapter ${chapter.number}` : chapter.title;
 
   useEffect(() => {
     const savedSettings = readSavedReaderSettings();
@@ -175,7 +211,7 @@ export default function ReaderChapter({ chapter }: ReaderChapterProps) {
     nextMode: ReaderMode
   ) => {
     const progressSnapshot: ReaderProgress = {
-      chapterSlug: chapter.slug,
+      chapterSlug: userId ? `${userId}:${chapter.slug}` : chapter.slug,
       chapterTitle: chapter.title,
       mode: nextMode,
       pageIndex: nextPageIndex,
@@ -184,7 +220,7 @@ export default function ReaderChapter({ chapter }: ReaderChapterProps) {
     };
 
     writeReaderProgress(progressSnapshot);
-  }, [chapter.slug, chapter.title]);
+  }, [chapter.slug, chapter.title, userId]);
 
   useEffect(() => {
     saveProgress(progress, pageIndex, mode);
@@ -304,8 +340,8 @@ export default function ReaderChapter({ chapter }: ReaderChapterProps) {
           <p className="section-tag">{chapter.book}</p>
           <h1>{chapter.title}</h1>
           <div className="reader-meta-bar">
-            <span>Chapter One</span>
-            <span>Free preview</span>
+            <span>{chapterLabel}</span>
+            <span>{chapter.isFree === false ? "Locked chapter" : chapter.eyebrow}</span>
             <span>{readTime}</span>
             <span>{timeLeft}</span>
             <span>Saved locally</span>
@@ -404,60 +440,118 @@ export default function ReaderChapter({ chapter }: ReaderChapterProps) {
         </div>
       </section>
 
-      <article
-        className={`reader-manuscript ${wide ? "wide" : ""} ${
-          mode === "page" ? "paged" : ""
-        }`}
-        style={{ fontSize: `${fontScale}rem` }}
-        onMouseUp={captureSelection}
-        onTouchEnd={captureSelection}
-      >
-        <p className="reader-kicker">{chapter.eyebrow}</p>
+      {chapters.length > 1 && (
+        <section className="reader-toc-strip" aria-label="Book chapters">
+          <div>
+            <p className="section-tag">Contents</p>
+            <h2>The Drowned Streetlamp</h2>
+          </div>
+          <div className="reader-toc-list">
+            {chapters.map((item) => {
+              const locked = item.isFree === false && !canReadFullBook;
+              const active = item.slug === chapter.slug;
 
-        {mode === "scroll" ? (
-          <>
-            <p className="reader-intro">{chapter.intro}</p>
-            {chapter.paragraphs.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
-          </>
-        ) : (
-          <>
-            {currentPage.map((paragraph, index) =>
-              pageIndex === 0 && index === 0 ? (
-                <p className="reader-intro" key={paragraph}>
-                  {paragraph}
-                </p>
+              return locked ? (
+                <span
+                  className={active ? "reader-toc-pill active locked" : "reader-toc-pill locked"}
+                  key={item.slug}
+                >
+                  <span>{item.number ? `Chapter ${item.number}` : item.title}</span>
+                  <small>Locked</small>
+                </span>
               ) : (
+                <Link
+                  className={active ? "reader-toc-pill active" : "reader-toc-pill"}
+                  href={getChapterHref(basePath, item.slug)}
+                  key={item.slug}
+                >
+                  <span>{item.number ? `Chapter ${item.number}` : item.title}</span>
+                  <small>{active ? "Reading" : item.isFree ? "Free" : "Unlocked"}</small>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {canReadCurrentChapter ? (
+        <article
+          className={`reader-manuscript ${wide ? "wide" : ""} ${
+            mode === "page" ? "paged" : ""
+          }`}
+          style={{ fontSize: `${fontScale}rem` }}
+          onMouseUp={captureSelection}
+          onTouchEnd={captureSelection}
+        >
+          <p className="reader-kicker">{chapter.eyebrow}</p>
+
+          {mode === "scroll" ? (
+            <>
+              <p className="reader-intro">{chapter.intro}</p>
+              {chapter.paragraphs.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
-              )
-            )}
-            <div className="page-controls">
-              <button
-                type="button"
-                className="btn-ghost"
-                disabled={pageIndex === 0}
-                onClick={() => updatePageIndex(Math.max(0, pageIndex - 1))}
-              >
-                Previous
-              </button>
-              <span>
-                Page {pageIndex + 1} of {pages.length}
-              </span>
-              <button
-                type="button"
-                className="btn-primary"
-                disabled={pageIndex === pages.length - 1}
-                onClick={() =>
-                  updatePageIndex(Math.min(pages.length - 1, pageIndex + 1))
-                }
-              >
-                Next
-              </button>
-            </div>
-          </>
-        )}
-      </article>
+              ))}
+            </>
+          ) : (
+            <>
+              {currentPage.map((paragraph, index) =>
+                pageIndex === 0 && index === 0 ? (
+                  <p className="reader-intro" key={paragraph}>
+                    {paragraph}
+                  </p>
+                ) : (
+                  <p key={paragraph}>{paragraph}</p>
+                )
+              )}
+              <div className="page-controls">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  disabled={pageIndex === 0}
+                  onClick={() => updatePageIndex(Math.max(0, pageIndex - 1))}
+                >
+                  Previous
+                </button>
+                <span>
+                  Page {pageIndex + 1} of {pages.length}
+                </span>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={pageIndex === pages.length - 1}
+                  onClick={() =>
+                    updatePageIndex(Math.min(pages.length - 1, pageIndex + 1))
+                  }
+                >
+                  Next
+                </button>
+              </div>
+            </>
+          )}
+        </article>
+      ) : (
+        <section className="reader-lock-message">
+          <span className="lock-icon">Locked</span>
+          <h2>{chapter.title} is waiting.</h2>
+          <p>
+            Chapter One stays free. Unlock the full eBook once, or support
+            monthly to read every available chapter and future supporter drops.
+          </p>
+          <div className="lock-features">
+            <span>Full eBook access</span>
+            <span>Supporter chapters</span>
+            <span>Reader progress</span>
+          </div>
+          <div className="reader-lock-actions">
+            <Link href={pricing.ebook.href} className="btn-primary">
+              Buy the eBook for {pricing.ebook.price}
+            </Link>
+            <Link href="/community" className="btn-ghost">
+              View memberships
+            </Link>
+          </div>
+        </section>
+      )}
 
       {(selectedText || highlightSaved) && (
         <section className="highlight-save-bar" aria-live="polite">
@@ -487,17 +581,48 @@ export default function ReaderChapter({ chapter }: ReaderChapterProps) {
         </div>
       ) : null}
 
-      <section className="reader-endcap">
-        <p className="section-tag">End of Preview</p>
-        <h2>Want the rest of the story?</h2>
-        <p>
-          Continue exploring the rain-soaked world of Streetlight and discover
-          what waits beneath the city.
-        </p>
-        <Link href={pricing.ebook.href} className="btn-primary">
-          Buy the eBook for {pricing.ebook.price}
-        </Link>
-      </section>
+      {canReadCurrentChapter && (
+        <section className="reader-endcap">
+          <p className="section-tag">
+            {nextChapter ? "Next Chapter" : "End of Current Story"}
+          </p>
+          <h2>
+            {nextChapter
+              ? nextChapter.isFree === false && !canReadFullBook
+                ? `${nextChapter.title} is locked.`
+                : "Keep reading?"
+              : "You reached the last available chapter."}
+          </h2>
+          <p>
+            {nextChapter
+              ? nextChapter.isFree === false && !canReadFullBook
+                ? "Continue exploring the rain-soaked world of Streetlight by unlocking the full eBook or joining as a monthly supporter."
+                : "The next part of the city is ready when you are."
+              : "More Streetlight pages will appear here as the book grows."}
+          </p>
+          <div className="reader-lock-actions">
+            {previousChapter && (
+              <Link href={getChapterHref(basePath, previousChapter.slug)} className="btn-ghost">
+                Previous chapter
+              </Link>
+            )}
+            {nextChapter && (nextChapter.isFree !== false || canReadFullBook) ? (
+              <Link href={getChapterHref(basePath, nextChapter.slug)} className="btn-primary">
+                Read {nextChapter.title}
+              </Link>
+            ) : (
+              <>
+                <Link href={pricing.ebook.href} className="btn-primary">
+                  Buy the eBook for {pricing.ebook.price}
+                </Link>
+                <Link href="/community" className="btn-ghost">
+                  Become a Supporter
+                </Link>
+              </>
+            )}
+          </div>
+        </section>
+      )}
     </main>
   );
 }
