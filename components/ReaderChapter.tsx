@@ -9,6 +9,7 @@ import {
   type LocalHighlight,
 } from "@/lib/local-highlights";
 import { pricing } from "@/lib/pricing";
+import ShareButtons from "./ShareButtons";
 
 type ReaderMode = "scroll" | "page";
 type ReaderTheme = "dark" | "amber" | "paper";
@@ -597,6 +598,11 @@ export default function ReaderChapter({
               View memberships
             </Link>
           </div>
+          <ShareButtons
+            title="Streetlight - The Drowned Streetlamp"
+            text="I found this rain-soaked noir story called Streetlight."
+            path="/book"
+          />
         </section>
       )}
 
@@ -668,6 +674,11 @@ export default function ReaderChapter({
               </>
             )}
           </div>
+          <ShareButtons
+            title={`Streetlight - ${chapter.title}`}
+            text={`Read ${chapter.title} from The Drowned Streetlamp.`}
+            path={getChapterHref(basePath, chapter.slug)}
+          />
         </section>
       )}
     </main>
