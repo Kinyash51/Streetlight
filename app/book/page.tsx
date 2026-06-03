@@ -1,24 +1,10 @@
 import { redirect } from "next/navigation";
-import { ReaderClient } from "@/components/reader-client";
-import { getReaderAccess } from "@/lib/access-control";
 import { createSupabaseServerClient } from "@/lib/supabase";
+import { getReaderAccess } from "@/lib/access-control";
+import { ReaderClient } from "@/components/reader-client";
 
-type ChapterBlock = {
-  type: "paragraph" | "break";
-  text: string;
-};
-
-type Chapter = {
-  id: string;
-  number: number;
-  title: string;
-  subtitle: string;
-  isFree: boolean;
-  wordCount: number;
-  content: ChapterBlock[];
-};
-
-const chapters: Chapter[] = [
+// Chapter data — you can move this to a CMS or database later
+const chapters = [
   {
     id: "chapter-one",
     number: 1,
@@ -33,7 +19,7 @@ const chapters: Chapter[] = [
       },
       {
         type: "paragraph",
-        text: "Elias knew that corner. He knew which doorways stayed dry, which alleys to avoid, and which streetlamps flickered before they died. But he had never seen one burn underwater.",
+        text: "Elias knew that corner. He knew which doorways stayed dry, which alleys to avoid, and which streetlamps flickered before they died. But he had never seen one burn underwater. He stood in the shelter of a burned-out pharmacy, watching the amber glow ripple through the puddle, and felt something he had not felt in years: curiosity.",
       },
       {
         type: "paragraph",
@@ -45,11 +31,11 @@ const chapters: Chapter[] = [
       },
       {
         type: "paragraph",
-        text: "He stepped out from the pharmacy doorway, felt the rain hit his shoulders like small, cold fingers, and walked toward the light. The water came over his shoes, cheap canvas already soaked through.",
+        text: "He stepped out from the pharmacy doorway, felt the rain hit his shoulders like small, cold fingers, and walked toward the light. The water came over his shoes — cheap canvas, already soaked through — and he stopped at the edge of the puddle, close enough to see his own reflection broken by the ripples.",
       },
       {
         type: "paragraph",
-        text: '"You see it too," a voice said.',
+        text: "\"You see it too,\" a voice said.",
       },
       {
         type: "paragraph",
@@ -57,23 +43,23 @@ const chapters: Chapter[] = [
       },
       {
         type: "paragraph",
-        text: '"See what?" he asked.',
+        text: "\"See what?\" he asked.",
       },
       {
         type: "paragraph",
-        text: '"The light that should not be." She smiled, or he thought she did. "The city is showing you something. The question is whether you will look long enough to understand what."',
+        text: "\"The light that shouldn't be.\" She smiled, or he thought she did — it was hard to tell in the dark. \"The city is showing you something. The question is whether you'll look long enough to understand what.\"",
       },
       {
         type: "paragraph",
-        text: "Elias looked back at the streetlamp. The water had risen another inch while they spoke, and still the light burned.",
+        text: "Elias looked back at the streetlamp. The water had risen another inch while they spoke, and still the light burned. He thought about the storm drains he knew, the ones that should have swallowed this puddle hours ago, and realized they were silent. Not clogged — silent. As if the water had chosen to stay.",
       },
       {
         type: "paragraph",
-        text: '"Who are you?" he asked.',
+        text: "\"Who are you?\" he asked.",
       },
       {
         type: "paragraph",
-        text: '"Someone who looked too long," she said. "And now I cannot stop seeing."',
+        text: "\"Someone who looked too long,\" she said. \"And now I can't stop seeing.\"",
       },
       {
         type: "paragraph",
@@ -85,7 +71,7 @@ const chapters: Chapter[] = [
       },
       {
         type: "paragraph",
-        text: "Not the flicker of a dying bulb. This was different. This was a pulse, like a heartbeat, like the city was breathing.",
+        text: "Not the flicker of a dying bulb — he knew that flicker, had watched it a thousand times on a thousand streets. This was different. This was a pulse, like a heartbeat, like the city was breathing.",
       },
       {
         type: "paragraph",
@@ -97,11 +83,15 @@ const chapters: Chapter[] = [
       },
       {
         type: "paragraph",
-        text: "That was the first thing he noticed, before the light, before the sound, before the vertigo that tilted the world and showed him what lay beneath the streets.",
+        text: "That was the first thing he noticed, before the light, before the sound, before the vertigo that tilted the world and showed him what lay beneath the streets. The water was warm, as if it had come from somewhere deep underground, somewhere the sun had never touched and the rain had never reached.",
       },
       {
         type: "paragraph",
-        text: '"Do not touch it," the old woman said from somewhere far away. "Not until you are ready to be seen."',
+        text: "He knelt, his hand hovering over the surface, and the reflection looked back at him — not his face, but something older, something that had been waiting in the water for a long time.",
+      },
+      {
+        type: "paragraph",
+        text: "\"Don't touch it,\" the old woman's voice came from somewhere far away, or maybe from inside his head. \"Not until you're ready to be seen.\"",
       },
       {
         type: "paragraph",
@@ -115,90 +105,193 @@ const chapters: Chapter[] = [
         type: "break",
         text: "*",
       },
-    ],
+      {
+        type: "paragraph",
+        text: "He woke in the pharmacy doorway, dry except for his shoes, the streetlamp burning normally above a puddle that drained even as he watched. The old woman was gone. The corner was empty. But in his pocket, folded small as a matchbook, he found a piece of paper with an address written in handwriting he did not recognize:",
+      },
+      {
+        type: "paragraph",
+        text: "\"The Underground. Stairwell behind the Meridian Hotel. Knock three times. Tell them the light sent you.\"",
+      },
+      {
+        type: "paragraph",
+        text: "Elias sat in the doorway until dawn, watching the streetlamp fade against the gray morning, and knew that his life had split into two parts: everything before the drowned light, and everything after.",
+      },
+      {
+        type: "paragraph",
+        text: "The city had finally noticed him.",
+      },
+      {
+        type: "paragraph",
+        text: "And he was not sure if that was a gift or a sentence.",
+      },
+    ]
   },
   {
     id: "chapter-two",
     number: 2,
-    title: "The Underground Map",
-    subtitle: "The city beneath the city",
+    title: "The Underground",
+    subtitle: "Elias descends",
     isFree: false,
     wordCount: 5100,
     content: [
       {
         type: "paragraph",
-        text: "The first rule of the Underground was that it did not stay in one place. Elias learned that before he learned how to breathe under the city.",
+        text: "The Meridian Hotel had been closed for fifteen years, its windows boarded with plywood that peeled like sunburned skin, its lobby a cave of dust and pigeon feathers. Elias had passed it a hundred times without looking up, the way you learn not to look at the dead things in a city that pretends to be alive.",
       },
       {
         type: "paragraph",
-        text: "The tunnel beneath Meridian looked older than the street above it, older than the buildings, older than the names on the rusted signs.",
+        text: "But now he stood at the service entrance, the note crumpled in his fist, and looked at the stairwell that descended into darkness. The steps were concrete, worn smooth by decades of maids and bellhops, and they smelled of mildew and something else — something warm and metallic, like the water in the puddle.",
       },
       {
         type: "paragraph",
-        text: "Every wall was covered in marks: arrows, names, warnings, dates, and sketches of lamps burning in impossible places.",
+        text: "He knocked three times.",
       },
       {
         type: "paragraph",
-        text: '"If the city shows you a door," the old woman had said, "it is because someone else is already waiting on the other side."',
+        text: "The sound was wrong. Not the hollow echo of concrete, but a deep, resonant thrum, as if he had knocked on the skin of something vast and sleeping. The darkness at the bottom of the stairs shifted, and a voice came up — not from a person, but from the space itself:",
       },
       {
         type: "paragraph",
-        text: "Elias kept walking because the water behind him had begun to rise again.",
+        text: "\"The light sent you.\"",
       },
-    ],
+      {
+        type: "paragraph",
+        text: "It was not a question.",
+      },
+      {
+        type: "paragraph",
+        text: "Elias stepped down. The stairs went deeper than they should have. He counted forty steps, then stopped counting. The air grew warmer, the darkness thicker, and he realized that the light he had followed was not above him anymore — it was below, rising up from the depths like a breath.",
+      },
+      {
+        type: "paragraph",
+        text: "At the bottom, the corridor opened into a space that could not exist beneath a hotel. It was a street, or a memory of a street, lined with buildings that had no doors but had windows that glowed with amber light. People moved through it — not many, but enough to make it feel inhabited. They wore clothes from different decades, different centuries, and none of them looked at him directly, but all of them seemed aware of him, the way you are aware of a draft in a closed room.",
+      },
+      {
+        type: "paragraph",
+        text: "\"First time?\" a man asked. He wore a bellhop uniform from the 1940s, the brass buttons tarnished green.",
+      },
+      {
+        type: "paragraph",
+        text: "\"Yes,\" Elias said.",
+      },
+      {
+        type: "paragraph",
+        text: "\"The light only sends the ones who see too much,\" the bellhop said. \"Or the ones who want to see more. Which are you?\"",
+      },
+      {
+        type: "paragraph",
+        text: "Elias thought about the drowned streetlamp, the warm water, the reflection that was not his face. \"I don't know,\" he said.",
+      },
+      {
+        type: "paragraph",
+        text: "\"Good answer.\" The bellhop smiled, and his teeth were the same amber color as the lights. \"The ones who know are the ones who stop looking.\"",
+      },
+      {
+        type: "paragraph",
+        text: "He gestured down the street, toward a building that looked like a library and a church and a subway station all at once. \"She's waiting for you. The one who sent the note. She's always waiting for the ones the light chooses.\"",
+      },
+      {
+        type: "paragraph",
+        text: "Elias walked toward the building, and the street watched him go.",
+      },
+    ]
   },
   {
     id: "chapter-three",
     number: 3,
-    title: "Names in the Rain",
-    subtitle: "What the streets remember",
+    title: "The Forgotten",
+    subtitle: "What the city remembers",
     isFree: false,
     wordCount: 4800,
     content: [
       {
         type: "paragraph",
-        text: "By morning, the city had forgotten the storm. The sidewalks steamed. The gutters whispered. The drowned streetlamp stood dry and dead at the corner like an ordinary thing.",
+        text: "The woman who waited was not the old woman from the corner. She was younger, or older, or both — it was hard to tell in the amber light, which seemed to smooth out some details and sharpen others. She sat behind a desk that was made of subway tiles and old newspaper, and she did not look up when Elias entered.",
       },
       {
         type: "paragraph",
-        text: "But Elias remembered what had opened beneath it, and memory was the one currency the city never wasted.",
+        text: "\"You touched the water,\" she said. It was not a question.",
       },
       {
         type: "paragraph",
-        text: "Someone had written his name on the pharmacy glass while he was gone.",
+        text: "\"Yes.\"",
       },
       {
         type: "paragraph",
-        text: "Not in paint. Not in dust. In rainwater, running upward.",
+        text: "\"And you saw something.\"",
       },
-    ],
-  },
+      {
+        type: "paragraph",
+        text: "\"I saw...\" Elias paused. The memory was already softening at the edges, like a dream you try to hold onto. \"I saw a face. Not mine. Something older.\"",
+      },
+      {
+        type: "paragraph",
+        text: "The woman looked up then, and her eyes were the same amber as the streetlamp, the same amber as the lights in this impossible underground. \"The city has a memory,\" she said. \"Not the memory of people — the memory of itself. Every street that has been walked, every wall that has been touched, every light that has burned and died. It remembers. And sometimes, when the rain is right, when the light is right, it shows that memory to someone who is ready to see.\"",
+      },
+      {
+        type: "paragraph",
+        text: "\"Ready how?\"",
+      },
+      {
+        type: "paragraph",
+        text: "\"Ready to be forgotten,\" she said. \"Or ready to be remembered. The city doesn't distinguish. It only offers. You chose to touch the water. You chose to see. Now you are part of the memory, and the memory is part of you.\"",
+      },
+      {
+        type: "paragraph",
+        text: "Elias felt something cold in his chest, not fear but recognition, the way you recognize a street you have never walked but have dreamed about. \"What do I do now?\"",
+      },
+      {
+        type: "paragraph",
+        text: "\"You learn,\" she said. \"Or you leave. The door is always open, but the street only shows itself once. If you walk away now, you will remember this as a strange night, a dream, a story you tell when you're drunk. If you stay, you will become part of the story the city tells itself.\"",
+      },
+      {
+        type: "paragraph",
+        text: "She pushed a book across the desk. It was bound in something that looked like leather but felt like water when he touched it, cool and yielding. \"The history of the forgotten. Read it. Or don't. The choice is always yours. That's the only freedom the city allows.\"",
+      },
+      {
+        type: "paragraph",
+        text: "Elias opened the book. The first page was blank except for a single sentence:",
+      },
+      {
+        type: "paragraph",
+        text: "\"Every street remembers something. Every shadow hides a story. You are now part of both.\"",
+      },
+      {
+        type: "paragraph",
+        text: "He looked up to ask what it meant, but the woman was gone, and the desk was dust, and the amber light was fading to something darker, something deeper, something that felt like the beginning of a very long night.",
+      },
+    ]
+  }
 ];
 
-type BookPageProps = {
-  searchParams?: Promise<{
-    chapter?: string;
-  }>;
-};
-
-export default async function BookPage({ searchParams }: BookPageProps) {
+export default async function BookPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ chapter?: string }>;
+}) {
   const params = searchParams ? await searchParams : {};
-  const requestedChapter = params.chapter || "chapter-one";
-  const currentChapter = chapters.find((chapter) => chapter.id === requestedChapter) ?? chapters[0];
-
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const access = await getReaderAccess(user?.id);
 
-  if (!currentChapter.isFree && !access.canReadFullBook) {
+  const { data: { user } } = await supabase.auth.getUser();
+  const access = await getReaderAccess(user?.id || null);
+
+  // Get requested chapter or default to chapter one
+  const requestedChapter = params.chapter || "chapter-one";
+  const currentChapterIndex = chapters.findIndex(c => c.id === requestedChapter);
+  const currentChapter = chapters[currentChapterIndex] || chapters[0];
+
+  // Check access for this chapter
+  const canReadCurrent = currentChapter.isFree || access.canReadFullBook;
+
+  // If trying to read locked chapter and not authorized, redirect to community
+  if (!canReadCurrent && !currentChapter.isFree) {
     redirect("/community");
   }
 
   return (
-    <main className="book-page reader-book-page">
-      <ReaderClient
+    <div className="book-page">
+      <ReaderClient 
         chapters={chapters}
         currentChapterId={currentChapter.id}
         access={{
@@ -208,8 +301,8 @@ export default async function BookPage({ searchParams }: BookPageProps) {
           canAccessSupporterNotes: access.canAccessSupporterNotes,
           canAccessPatronExtras: access.canAccessPatronExtras,
         }}
-        userId={user?.id ?? null}
+        userId={user?.id || null}
       />
-    </main>
+    </div>
   );
 }
