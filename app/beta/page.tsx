@@ -1,7 +1,8 @@
 "use client";
 
+import type { FormEvent } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
 import { supabase } from "@/lib/supabase-client";
 
 type BetaForm = {
@@ -28,86 +29,124 @@ export default function BetaPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setError("");
 
-    const { error: submitError } = await supabase.from("beta_applications").insert({
-      name: form.name.trim(),
-      email: form.email.trim(),
-      why_noir: form.whyNoir.trim(),
-      beta_experience: form.betaExperience,
-      feedback_strength: form.feedbackStrength,
-      can_finish_in_2_weeks: form.canFinish,
-    });
+    try {
+      const { error: submitError } = await supabase
+        .from("beta_applications")
+        .insert({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          why_noir: form.whyNoir.trim(),
+          beta_experience: form.betaExperience,
+          feedback_strength: form.feedbackStrength,
+          can_finish_in_2_weeks: form.canFinish,
+        });
 
-    setLoading(false);
-
-    if (submitError) {
-      setError(submitError.message);
-      return;
+      if (submitError) throw submitError;
+      setSubmitted(true);
+    } catch (caughtError) {
+      const message =
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Something went wrong.";
+      setError(message);
+    } finally {
+      setLoading(false);
     }
-
-    setSubmitted(true);
-  }
+  };
 
   if (submitted) {
     return (
       <main className="beta-page">
-        <section className="beta-container">
+        <div className="beta-container">
           <div className="beta-success">
             <div className="beta-success-icon" aria-hidden="true">
-              SL
+              <svg
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#f59e0b"
+                strokeWidth="2"
+              >
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
             </div>
             <h1>Application received</h1>
             <p>
               Thank you for wanting to read the draft. I review every
-              application personally and will reach out if you are selected.
+              application personally and will reach out within 48 hours if you
+              are selected.
             </p>
             <p className="beta-success-note">
-              The beta is limited to 10-20 readers. If you are not selected
-              this round, you can still follow the public chapters.
+              The beta is limited to 10-20 readers. If you are not selected this
+              round, you will be first in line for the next one.
             </p>
             <Link href="/" className="btn-primary">
               Back to Streetlight
             </Link>
           </div>
-        </section>
+        </div>
       </main>
     );
   }
 
   return (
     <main className="beta-page">
-      <section className="beta-container">
+      <div className="beta-container">
         <div className="beta-header">
-          <span className="beta-label">Limited beta</span>
+          <span className="beta-label">Limited to 20 readers</span>
           <h1>Streetlight Beta Program</h1>
           <p>
-            Read the deeper draft of <em>The Drowned Streetlamp</em> before it
-            launches and help shape the final version with focused feedback.
+            Read the complete draft of <em>The Drowned Streetlamp</em> before it
+            launches. Help shape the final version with your feedback.
           </p>
         </div>
 
         <div className="beta-details">
           <h2>What you get</h2>
           <ul>
-            <li>Early draft access when the beta round opens</li>
-            <li>A focused feedback path for story, pacing, and atmosphere</li>
-            <li>A chance to help shape the Streetlight universe</li>
-            <li>Your name considered for early reader credits</li>
+            <li>Full access to the 28,000-word draft</li>
+            <li>Inline feedback form - comment on any paragraph</li>
+            <li>Private group chat with other beta readers</li>
+            <li>Your name in the Early Readers credits</li>
+            <li>Free copy of the finished eBook at launch</li>
           </ul>
 
           <h2>What I ask</h2>
           <ul>
-            <li>Finish reading within the beta window</li>
-            <li>Give honest feedback on what works and what does not</li>
-            <li>Keep unreleased draft material private</li>
+            <li>Finish reading within 2 weeks</li>
+            <li>Submit feedback through the built-in form</li>
+            <li>Keep the draft confidential - no spoilers</li>
+            <li>
+              Tell me what worked, what did not, and what you wanted more of
+            </li>
           </ul>
         </div>
 
-        {error ? <div className="beta-error">{error}</div> : null}
+        {error ? (
+          <div className="beta-error">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            {error}
+          </div>
+        ) : null}
 
         <form onSubmit={handleSubmit} className="beta-form">
           <div className="beta-field">
@@ -142,7 +181,7 @@ export default function BetaPage() {
 
           <div className="beta-field">
             <label htmlFor="whyNoir">
-              What draws you to urban noir fiction?
+              What draws you to urban noir fiction? <span>(1-2 sentences)</span>
             </label>
             <textarea
               id="whyNoir"
@@ -150,7 +189,7 @@ export default function BetaPage() {
               onChange={(event) =>
                 setForm({ ...form, whyNoir: event.target.value })
               }
-              placeholder="I love when cities feel like characters..."
+              placeholder="I love how cities become characters..."
               required
               rows={3}
               disabled={loading}
@@ -170,7 +209,7 @@ export default function BetaPage() {
             >
               <option value="">Select...</option>
               <option value="yes">Yes, I have beta read before</option>
-              <option value="no">No, but I can give focused feedback</option>
+              <option value="no">No, but I am eager to learn</option>
               <option value="writer">I am a writer myself</option>
             </select>
           </div>
@@ -189,11 +228,11 @@ export default function BetaPage() {
               disabled={loading}
             >
               <option value="">Select...</option>
-              <option value="plot">Plot and pacing</option>
-              <option value="character">Character voice</option>
-              <option value="prose">Sentence-level prose</option>
+              <option value="plot">Plot holes and pacing</option>
+              <option value="character">Character voice and motivation</option>
+              <option value="prose">Sentence-level prose and style</option>
               <option value="world">Worldbuilding and atmosphere</option>
-              <option value="all">A mix of everything</option>
+              <option value="all">I can do it all</option>
             </select>
           </div>
 
@@ -208,23 +247,50 @@ export default function BetaPage() {
                 required
                 disabled={loading}
               />
-              <span>I can finish reading in the beta window.</span>
+              <span>I can finish reading within 2 weeks and submit feedback.</span>
             </label>
           </div>
 
-          <button type="submit" className="btn-primary btn-large" disabled={loading}>
-            {loading ? "Submitting..." : "Apply for Beta Access"}
+          <button
+            type="submit"
+            className="btn-primary btn-large"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="beta-loading">
+                <svg
+                  className="spinner"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                    strokeDasharray="60"
+                    strokeDashoffset="20"
+                  />
+                </svg>
+                Submitting...
+              </span>
+            ) : (
+              "Apply for Beta Access"
+            )}
           </button>
         </form>
 
         <div className="beta-footer">
           <p>
             Already a Supporter?{" "}
-            <Link href="/dashboard">Check your dashboard</Link> for current
-            access.
+            <Link href="/dashboard">Check your dashboard</Link> for beta access.
           </p>
         </div>
-      </section>
+      </div>
     </main>
   );
 }
