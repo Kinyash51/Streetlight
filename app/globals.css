@@ -5668,6 +5668,303 @@ overflow: hidden;
   background: rgba(255,255,255,.08);
 }
 
+.dashboard-page {
+  min-height: 100vh;
+  padding: 64px 20px 96px;
+  background:
+    radial-gradient(circle at 50% 0, rgba(240,165,0,.12), transparent 32%),
+    var(--black);
+}
+
+.dashboard-container {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  display: grid;
+  gap: 24px;
+}
+
+.dashboard-loading,
+.dashboard-empty {
+  min-height: 62vh;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.dashboard-empty h2,
+.dashboard-card h2 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.dashboard-loading p,
+.dashboard-empty p,
+.dashboard-header p,
+.dashboard-card p {
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.dashboard-header h1 {
+  margin: 0 0 8px;
+  color: var(--text-primary);
+  font-family: Georgia, serif;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 400;
+}
+
+.dashboard-card {
+  padding: 24px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  background: rgba(255,255,255,.035);
+  box-shadow: 0 18px 48px rgba(0,0,0,.18);
+}
+
+.dashboard-card.membership {
+  border-color: rgba(240,165,0,.18);
+  background:
+    radial-gradient(circle at 100% 0, rgba(240,165,0,.14), transparent 30%),
+    rgba(255,255,255,.035);
+}
+
+.membership-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.membership-badge {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: .76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.membership-badge.free {
+  background: rgba(255,255,255,.08);
+  color: var(--text-secondary);
+}
+
+.membership-badge.supporter {
+  background: rgba(240,165,0,.18);
+  color: var(--amber);
+}
+
+.membership-badge.patron {
+  background: rgba(212,175,55,.2);
+  color: #d4af37;
+}
+
+.membership-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+  font-weight: 800;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.membership-status.active .status-dot {
+  background: #22c55e;
+  box-shadow: 0 0 12px rgba(34,197,94,.6);
+}
+
+.membership-status.past-due .status-dot {
+  background: #ef4444;
+}
+
+.membership-status.canceled .status-dot {
+  background: var(--amber);
+}
+
+.membership-renewal {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 18px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255,255,255,.08);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.membership-renewal span {
+  color: var(--text-secondary);
+}
+
+.membership-renewal strong {
+  color: var(--text-primary);
+}
+
+.membership-billing {
+  margin-top: 8px;
+}
+
+.membership-billing .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.book-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.book-cover {
+  width: 58px;
+  height: 78px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(240,165,0,.35);
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgba(240,165,0,.18), rgba(255,255,255,.04)),
+    #111;
+  color: var(--amber);
+  font-family: Georgia, serif;
+  font-weight: 900;
+}
+
+.book-info h3 {
+  margin: 0 0 4px;
+  color: var(--text-primary);
+}
+
+.book-info p {
+  margin: 0 0 10px;
+}
+
+.book-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: .82rem;
+}
+
+.progress-bar {
+  width: min(180px, 32vw);
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.1);
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--amber);
+}
+
+.btn-small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(240,165,0,.4);
+  border-radius: 999px;
+  color: var(--amber);
+  font-size: .86rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.extra-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.extra-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.extra-icon,
+.extra-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: .7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.extra-icon {
+  width: 44px;
+  height: 28px;
+  background: rgba(240,165,0,.12);
+  color: var(--amber);
+}
+
+.extra-tag {
+  padding: 4px 8px;
+  background: rgba(255,255,255,.08);
+  color: var(--text-secondary);
+}
+
+.extra-item h4 {
+  margin: 0 0 4px;
+  color: var(--text-primary);
+}
+
+.extra-item p,
+.early-access p,
+.beta-cta p {
+  margin: 0;
+}
+
+.early-access,
+.beta-cta {
+  display: grid;
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .dashboard-page {
+    padding: 42px 16px 80px;
+  }
+
+  .book-item,
+  .extra-item {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .book-cover {
+    width: 52px;
+    height: 70px;
+  }
+
+  .progress-bar {
+    width: 100%;
+  }
+}
+
 .auth-nav-dropdown-name,
 .auth-nav-dropdown-email {
   display: block;
