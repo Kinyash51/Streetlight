@@ -1,158 +1,215 @@
-import Image from "next/image";
-import Link from "next/link";
-import { pricing } from "@/lib/pricing";
+import { redirect } from "next/navigation";
+import { ReaderClient } from "@/components/reader-client";
+import { getReaderAccess } from "@/lib/access-control";
+import { createSupabaseServerClient } from "@/lib/supabase";
 
-const bookIncludes = [
-  "The Drowned Streetlamp eBook",
-  "One-time purchase, not a subscription",
-  "Chapter One available to read free first",
-  "Access ready to connect with your Streetlight account",
+type ChapterBlock = {
+  type: "paragraph" | "break";
+  text: string;
+};
+
+type Chapter = {
+  id: string;
+  number: number;
+  title: string;
+  subtitle: string;
+  isFree: boolean;
+  wordCount: number;
+  content: ChapterBlock[];
+};
+
+const chapters: Chapter[] = [
+  {
+    id: "chapter-one",
+    number: 1,
+    title: "The Drowned Streetlamp",
+    subtitle: "Where the rain began",
+    isFree: true,
+    wordCount: 4200,
+    content: [
+      {
+        type: "paragraph",
+        text: "The rain had been falling for three days when Elias first saw the drowned streetlamp. It stood at the corner of Meridian and Hollow, its light burning beneath three inches of standing water, as if the city itself had forgotten which way was up.",
+      },
+      {
+        type: "paragraph",
+        text: "Elias knew that corner. He knew which doorways stayed dry, which alleys to avoid, and which streetlamps flickered before they died. But he had never seen one burn underwater.",
+      },
+      {
+        type: "paragraph",
+        text: "The city had taught him not to be curious. Curiosity led to questions, questions led to attention, and attention was the one thing you did not want in a place that remembered everyone it broke.",
+      },
+      {
+        type: "paragraph",
+        text: "But the streetlamp kept burning.",
+      },
+      {
+        type: "paragraph",
+        text: "He stepped out from the pharmacy doorway, felt the rain hit his shoulders like small, cold fingers, and walked toward the light. The water came over his shoes, cheap canvas already soaked through.",
+      },
+      {
+        type: "paragraph",
+        text: '"You see it too," a voice said.',
+      },
+      {
+        type: "paragraph",
+        text: "Elias turned. An old woman sat on the steps of a boarded-up brownstone, wrapped in layers of plastic and wool, her face hidden in shadow except for the amber catch of the streetlamp in her eyes.",
+      },
+      {
+        type: "paragraph",
+        text: '"See what?" he asked.',
+      },
+      {
+        type: "paragraph",
+        text: '"The light that should not be." She smiled, or he thought she did. "The city is showing you something. The question is whether you will look long enough to understand what."',
+      },
+      {
+        type: "paragraph",
+        text: "Elias looked back at the streetlamp. The water had risen another inch while they spoke, and still the light burned.",
+      },
+      {
+        type: "paragraph",
+        text: '"Who are you?" he asked.',
+      },
+      {
+        type: "paragraph",
+        text: '"Someone who looked too long," she said. "And now I cannot stop seeing."',
+      },
+      {
+        type: "paragraph",
+        text: "She stood, joints cracking like dry twigs, and walked past him into the rain. He watched her go, a small figure swallowed by the dark, and then he looked back at the streetlamp one more time.",
+      },
+      {
+        type: "paragraph",
+        text: "The light flickered.",
+      },
+      {
+        type: "paragraph",
+        text: "Not the flicker of a dying bulb. This was different. This was a pulse, like a heartbeat, like the city was breathing.",
+      },
+      {
+        type: "paragraph",
+        text: "Elias stepped into the puddle.",
+      },
+      {
+        type: "paragraph",
+        text: "The water was warm.",
+      },
+      {
+        type: "paragraph",
+        text: "That was the first thing he noticed, before the light, before the sound, before the vertigo that tilted the world and showed him what lay beneath the streets.",
+      },
+      {
+        type: "paragraph",
+        text: '"Do not touch it," the old woman said from somewhere far away. "Not until you are ready to be seen."',
+      },
+      {
+        type: "paragraph",
+        text: "Elias touched the water.",
+      },
+      {
+        type: "paragraph",
+        text: "And the city looked back.",
+      },
+      {
+        type: "break",
+        text: "*",
+      },
+    ],
+  },
+  {
+    id: "chapter-two",
+    number: 2,
+    title: "The Underground Map",
+    subtitle: "The city beneath the city",
+    isFree: false,
+    wordCount: 5100,
+    content: [
+      {
+        type: "paragraph",
+        text: "The first rule of the Underground was that it did not stay in one place. Elias learned that before he learned how to breathe under the city.",
+      },
+      {
+        type: "paragraph",
+        text: "The tunnel beneath Meridian looked older than the street above it, older than the buildings, older than the names on the rusted signs.",
+      },
+      {
+        type: "paragraph",
+        text: "Every wall was covered in marks: arrows, names, warnings, dates, and sketches of lamps burning in impossible places.",
+      },
+      {
+        type: "paragraph",
+        text: '"If the city shows you a door," the old woman had said, "it is because someone else is already waiting on the other side."',
+      },
+      {
+        type: "paragraph",
+        text: "Elias kept walking because the water behind him had begun to rise again.",
+      },
+    ],
+  },
+  {
+    id: "chapter-three",
+    number: 3,
+    title: "Names in the Rain",
+    subtitle: "What the streets remember",
+    isFree: false,
+    wordCount: 4800,
+    content: [
+      {
+        type: "paragraph",
+        text: "By morning, the city had forgotten the storm. The sidewalks steamed. The gutters whispered. The drowned streetlamp stood dry and dead at the corner like an ordinary thing.",
+      },
+      {
+        type: "paragraph",
+        text: "But Elias remembered what had opened beneath it, and memory was the one currency the city never wasted.",
+      },
+      {
+        type: "paragraph",
+        text: "Someone had written his name on the pharmacy glass while he was gone.",
+      },
+      {
+        type: "paragraph",
+        text: "Not in paint. Not in dust. In rainwater, running upward.",
+      },
+    ],
+  },
 ];
 
-const storyNotes = [
-  {
-    title: "Urban noir",
-    text: "A rain-soaked city where streets remember what people try to forget.",
-  },
-  {
-    title: "A vulnerable lead",
-    text: "Elias is not a hero with power. He is a survivor who sees what others miss.",
-  },
-  {
-    title: "A larger world",
-    text: "The drowned streetlamp is only the first door into the Streetlight universe.",
-  },
-];
+type BookPageProps = {
+  searchParams?: Promise<{
+    chapter?: string;
+  }>;
+};
 
-export default function BookPage() {
+export default async function BookPage({ searchParams }: BookPageProps) {
+  const params = searchParams ? await searchParams : {};
+  const requestedChapter = params.chapter || "chapter-one";
+  const currentChapter = chapters.find((chapter) => chapter.id === requestedChapter) ?? chapters[0];
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const access = await getReaderAccess(user?.id);
+
+  if (!currentChapter.isFree && !access.canReadFullBook) {
+    redirect("/community");
+  }
+
   return (
-    <main className="book-page book-product-page">
-      <section className="book-product-hero">
-        <div className="book-product-cover-wrap">
-          <Image
-            src="/images/book-cover.jpg"
-            alt="The Drowned Streetlamp book cover"
-            width={360}
-            height={540}
-            className="book-product-cover"
-            priority
-          />
-        </div>
-
-        <div className="book-product-copy">
-          <p className="section-tag">A Streetlight Novella</p>
-          <h1>The Drowned Streetlamp</h1>
-          <p className="book-product-lede">
-            A homeless teenager drifting through a rain-soaked city is pulled
-            into a hidden world operating beneath the neon glow of the streets.
-          </p>
-
-          <div className="book-purchase-panel">
-            <div>
-              <span>eBook</span>
-              <strong>{pricing.ebook.price}</strong>
-              <p>{pricing.ebook.billing}</p>
-            </div>
-            <div className="book-purchase-actions">
-              <Link href={pricing.ebook.href} className="btn-primary">
-                Buy eBook
-              </Link>
-              <Link href="/read/chapter-one" className="btn-ghost">
-                Start Chapter One Free
-              </Link>
-            </div>
-          </div>
-
-          <p className="book-product-note">
-            The eBook is a one-time purchase. Membership tiers are separate and
-            monthly.
-          </p>
-        </div>
-      </section>
-
-      <section className="book-synopsis-section">
-        <div className="book-synopsis">
-          <p className="section-tag">The Story</p>
-          <h2>A city that remembers everyone it breaks.</h2>
-          <p>
-            Elias knows which doorways stay dry, which alleys to avoid, and
-            which streetlamps flicker before they die. But when he finds a
-            streetlamp burning underwater, the city stops being background and
-            starts looking back.
-          </p>
-          <p>
-            The Drowned Streetlamp is the opening book in the Streetlight
-            universe: urban noir fiction about memory, loneliness, survival, and
-            the hidden systems beneath ordinary streets.
-          </p>
-        </div>
-      </section>
-
-      <section className="book-includes-section">
-        <div className="book-includes-grid">
-          <div className="book-includes-card">
-            <p className="section-tag">What You Get</p>
-            <h2>Simple access. No tier confusion.</h2>
-            <ul>
-              {bookIncludes.map((item) => (
-                <li key={item}>
-                  <span aria-hidden="true">Included</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="book-trust-card">
-            <p className="section-tag">Before You Buy</p>
-            <h2>Read first.</h2>
-            <p>
-              Start with Chapter One for free. If the city keeps you, the eBook
-              is available as a one-time purchase.
-            </p>
-            <Link href="/read/chapter-one" className="btn-ghost">
-              Read the Opening
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="book-world-section">
-        <div className="book-world-head">
-          <p className="section-tag">Inside the Book</p>
-          <h2>What the story is built on.</h2>
-        </div>
-
-        <div className="book-world-grid">
-          {storyNotes.map((note) => (
-            <article className="book-world-card" key={note.title}>
-              <h3>{note.title}</h3>
-              <p>{note.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="book-final-cta">
-        <div className="book-final-inner">
-          <h2>Begin with the rain.</h2>
-          <p>
-            Read the free opening chapter, then buy the eBook if The Drowned
-            Streetlamp feels like your kind of city.
-          </p>
-          <div className="book-final-actions">
-            <Link href="/read/chapter-one" className="btn-ghost">
-              Start Chapter One Free
-            </Link>
-            <Link href={pricing.ebook.href} className="btn-primary">
-              Buy eBook - {pricing.ebook.price}
-            </Link>
-          </div>
-          <Link href="/community" className="book-community-link">
-            Looking for memberships? Visit the Community page.
-          </Link>
-        </div>
-      </section>
+    <main className="book-page reader-book-page">
+      <ReaderClient
+        chapters={chapters}
+        currentChapterId={currentChapter.id}
+        access={{
+          canReadChapterOne: access.canReadChapterOne,
+          canReadFullBook: access.canReadFullBook,
+          canReadEarlyChapters: access.canReadEarlyChapters,
+          canAccessSupporterNotes: access.canAccessSupporterNotes,
+          canAccessPatronExtras: access.canAccessBonusStories,
+        }}
+        userId={user?.id ?? null}
+      />
     </main>
   );
 }
