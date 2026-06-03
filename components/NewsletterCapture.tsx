@@ -8,26 +8,45 @@ export default function NewsletterCapture() {
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">(
     "idle",
   );
+  const [errorMessage, setErrorMessage] = useState("Enter a valid email address.");
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!email.trim() || !email.includes("@")) {
+      setErrorMessage("Enter a valid email address.");
       setStatus("error");
       return;
     }
 
     setStatus("submitting");
+    setErrorMessage("Enter a valid email address.");
 
     try {
-      const subscribers = JSON.parse(
-        window.localStorage.getItem("streetlight-newsletter") || "[]",
-      );
-      subscribers.push({ email, joinedAt: new Date().toISOString() });
-      window.localStorage.setItem("streetlight-newsletter", JSON.stringify(subscribers));
+      const response = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          source: "homepage",
+        }),
+      });
+      const data = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Could not save your email yet.");
+      }
+
       setStatus("success");
       setEmail("");
-    } catch {
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Could not save your email yet.",
+      );
       setStatus("error");
     }
   }
@@ -48,7 +67,7 @@ export default function NewsletterCapture() {
           {status === "success" ? (
             <div className="newsletter-success" role="status">
               <span aria-hidden="true">Saved</span>
-              <p>Saved on this device. Connect a newsletter backend before launch.</p>
+              <p>You are on the Streetlight update list.</p>
             </div>
           ) : (
             <form className="newsletter-form" onSubmit={handleSubmit}>
@@ -80,11 +99,11 @@ export default function NewsletterCapture() {
               </div>
               {status === "error" ? (
                 <p className="newsletter-error" role="alert">
-                  Enter a valid email address.
+                  {errorMessage}
                 </p>
               ) : null}
               <p className="newsletter-note">
-                Placeholder signup. A real email service still needs to be connected.
+                No spam. Just chapter drops, lore notes, and important reader updates.
               </p>
             </form>
           )}
