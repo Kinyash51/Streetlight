@@ -5662,6 +5662,12 @@ overflow: hidden;
   border-bottom: 1px solid rgba(255,255,255,.08);
 }
 
+.auth-nav-dropdown-divider {
+  height: 1px;
+  margin: 8px 0;
+  background: rgba(255,255,255,.08);
+}
+
 .auth-nav-dropdown-name,
 .auth-nav-dropdown-email {
   display: block;

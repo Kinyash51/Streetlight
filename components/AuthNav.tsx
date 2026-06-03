@@ -1,114 +1,66 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { pricing } from "@/lib/pricing";
 import { supabase } from "@/lib/supabase-client";
-
-function getDisplayName(user: User) {
-  return (
-    user.user_metadata?.username ??
-    user.user_metadata?.name ??
-    user.email?.split("@")[0] ??
-    "Reader"
-  );
-}
-
-function getInitials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
-}
 
 export default function AuthNav() {
   const [user, setUser] = useState<User | null>(null);
-  const [tier, setTier] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [tier, setTier] = useState<string | null>(null);
 
   useEffect(() => {
-    let alive = true;
-
-    async function loadMembership(currentUser: User | null) {
-      if (!currentUser) {
-        setTier(null);
-        return;
-      }
-
-      const { data } = await supabase
-        .from("subscriptions")
-        .select("tier, status")
-        .eq("user_id", currentUser.id)
-        .in("status", ["active", "trialing"])
-        .maybeSingle();
-
-      if (!alive) {
-        return;
-      }
-
-      setTier(data?.tier ?? null);
-    }
-
-    async function loadUser() {
+    async function getUser() {
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const currentUser = session?.user ?? null;
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
 
-      if (!alive) {
-        return;
+      if (user) {
+        const { data: sub } = await supabase
+          .from("subscriptions")
+          .select("tier, status")
+          .eq("user_id", user.id)
+          .in("status", ["active", "trialing"])
+          .maybeSingle();
+
+        if (sub?.status === "active" || sub?.status === "trialing") {
+          setTier(sub.tier);
+        }
       }
 
-      setUser(currentUser);
-      await loadMembership(currentUser);
       setLoading(false);
     }
 
-    loadUser();
+    getUser();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      setOpen(false);
-      loadMembership(currentUser);
-      setLoading(false);
+
+      if (!currentUser) {
+        setTier(null);
+        setDropdownOpen(false);
+      }
     });
 
-    return () => {
-      alive = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    function closeOnOutsideClick(event: MouseEvent) {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", closeOnOutsideClick);
-    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
-  }, []);
-
-  async function signOut() {
+  async function handleSignOut() {
     await supabase.auth.signOut();
     setUser(null);
     setTier(null);
-    setOpen(false);
+    setDropdownOpen(false);
     window.location.href = "/";
   }
 
   if (loading) {
-    return <div className="auth-nav-skeleton" aria-hidden="true" />;
+    return <div className="auth-nav-skeleton" />;
   }
 
   if (!user) {
@@ -119,63 +71,118 @@ export default function AuthNav() {
     );
   }
 
-  const displayName = getDisplayName(user);
-  const initials = getInitials(displayName) || "SL";
-  const tierLabel =
-    tier === pricing.patron.checkoutProduct
-      ? pricing.patron.name
-      : tier === pricing.supporter.checkoutProduct
-        ? pricing.supporter.name
-        : null;
+  const displayName =
+    user.user_metadata?.username || user.email?.split("@")[0] || "Reader";
+  const initials = displayName.slice(0, 2).toUpperCase();
+
+  const tierBadge =
+    tier === "patron" ? "patron" : tier === "supporter" ? "supporter" : null;
 
   return (
-    <div className="auth-nav" ref={menuRef}>
+    <div className="auth-nav">
       <button
         type="button"
         className="auth-nav-trigger"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        aria-label="Open account menu"
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+        aria-expanded={dropdownOpen}
       >
         <span className="auth-nav-avatar">{initials}</span>
-        {tierLabel ? (
-          <span className={`auth-nav-badge ${tier}`}>{tierLabel}</span>
+        {tierBadge ? (
+          <span className={`auth-nav-badge ${tierBadge}`}>{tierBadge}</span>
         ) : null}
-        <span className={`auth-nav-chevron ${open ? "open" : ""}`}>⌄</span>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
+          className={`auth-nav-chevron ${dropdownOpen ? "open" : ""}`}
+          aria-hidden="true"
+        >
+          <path
+            d="M2.5 4.5L6 8L9.5 4.5"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </button>
 
-      {open ? (
+      {dropdownOpen ? (
         <div className="auth-nav-dropdown">
           <div className="auth-nav-dropdown-header">
             <span className="auth-nav-dropdown-name">{displayName}</span>
             <span className="auth-nav-dropdown-email">{user.email}</span>
           </div>
+
+          <div className="auth-nav-dropdown-divider" />
+
           <Link
             href="/dashboard"
             className="auth-nav-dropdown-item"
-            onClick={() => setOpen(false)}
+            onClick={() => setDropdownOpen(false)}
           >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+            </svg>
             Dashboard
           </Link>
-          <Link
-            href="/account"
-            className="auth-nav-dropdown-item"
-            onClick={() => setOpen(false)}
-          >
-            Account
-          </Link>
-          <Link
-            href="/checkout"
-            className="auth-nav-dropdown-item"
-            onClick={() => setOpen(false)}
-          >
-            Manage Access
-          </Link>
+
+          {tierBadge ? (
+            <form action="/api/portal" method="post">
+              <button
+                type="submit"
+                className="auth-nav-dropdown-item"
+                onClick={() => setDropdownOpen(false)}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <rect x="1" y="4" width="22" height="16" rx="2" />
+                  <line x1="1" y1="10" x2="23" y2="10" />
+                </svg>
+                Manage Billing
+              </button>
+            </form>
+          ) : null}
+
+          <div className="auth-nav-dropdown-divider" />
+
           <button
             type="button"
             className="auth-nav-dropdown-item signout"
-            onClick={signOut}
+            onClick={handleSignOut}
           >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
             Sign Out
           </button>
         </div>
