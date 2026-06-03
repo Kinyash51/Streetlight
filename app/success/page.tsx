@@ -1,183 +1,230 @@
 "use client";
 
-import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
-import { pricing } from "@/lib/pricing";
 
-type SyncStatus = "loading" | "ready";
-type PurchaseKind = "ebook" | "supporter" | "patron" | "unknown";
+function SuccessLoading() {
+  return (
+    <main className="success-page">
+      <div className="success-loading">
+        <div className="success-spinner" />
+        <p>Confirming your place in the light...</p>
+      </div>
+    </main>
+  );
+}
 
 function SuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
-  const [status, setStatus] = useState<SyncStatus>("loading");
-  const [purchaseKind, setPurchaseKind] = useState<PurchaseKind>("unknown");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading"
+  );
+  const [tier, setTier] = useState<string | null>(null);
 
   useEffect(() => {
-    let stopped = false;
-    let attempts = 0;
+    if (!sessionId) {
+      const timer = window.setTimeout(() => setStatus("error"), 0);
+      return () => window.clearTimeout(timer);
+    }
 
-    async function checkAccess() {
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    const interval = window.setInterval(async () => {
+      attempts += 1;
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) {
-        setStatus("ready");
-        return;
-      }
-
-      const [{ data: orders }, { data: subscriptions }] = await Promise.all([
-        supabase
-          .from("orders")
-          .select("product, status")
-          .eq("user_id", user.id)
-          .eq("product", pricing.ebook.checkoutProduct)
-          .eq("status", "paid"),
-        supabase
+      if (user) {
+        const { data: sub } = await supabase
           .from("subscriptions")
           .select("tier, status")
           .eq("user_id", user.id)
-          .in("status", ["active", "trialing"]),
-      ]);
+          .in("status", ["active", "trialing"])
+          .maybeSingle();
 
-      const subscription = subscriptions?.find(
-        (item) =>
-          item.tier === pricing.supporter.checkoutProduct ||
-          item.tier === pricing.patron.checkoutProduct
-      );
-
-      if (subscription?.tier === pricing.patron.checkoutProduct) {
-        setPurchaseKind("patron");
-        setStatus("ready");
-        return;
-      }
-
-      if (subscription?.tier === pricing.supporter.checkoutProduct) {
-        setPurchaseKind("supporter");
-        setStatus("ready");
-        return;
-      }
-
-      if (orders?.length) {
-        setPurchaseKind("ebook");
-        setStatus("ready");
-        return;
-      }
-
-      attempts += 1;
-
-      if (attempts >= 8 || !sessionId) {
-        setStatus("ready");
-        return;
-      }
-
-      window.setTimeout(() => {
-        if (!stopped) {
-          checkAccess();
+        if (sub?.status === "active" || sub?.status === "trialing") {
+          setTier(sub.tier);
+          setStatus("success");
+          window.clearInterval(interval);
+          return;
         }
-      }, 1000);
-    }
+      }
 
-    checkAccess();
+      if (attempts >= maxAttempts) {
+        setStatus("success");
+        window.clearInterval(interval);
+      }
+    }, 1000);
 
-    return () => {
-      stopped = true;
-    };
+    return () => window.clearInterval(interval);
   }, [sessionId]);
 
   if (status === "loading") {
+    return <SuccessLoading />;
+  }
+
+  if (status === "error") {
     return (
-      <main className="success-page success-experience">
-        <section className="success-shell success-shell-centered">
-          <div className="success-copy">
-            <p className="section-tag">Payment Successful</p>
-            <h1>Confirming your access...</h1>
-            <p>
-              Stripe has sent you back to Streetlight. The webhook may need a
-              moment to sync your reader access.
-            </p>
-          </div>
-        </section>
+      <main className="success-page">
+        <div className="success-container error">
+          <h1>Something went wrong</h1>
+          <p>
+            We could not confirm your payment. If you were charged, check your
+            email or contact support.
+          </p>
+          <Link href="/community" className="btn-primary">
+            Back to Community
+          </Link>
+        </div>
       </main>
     );
   }
 
-  const label =
-    purchaseKind === "ebook"
-      ? "eBook purchase"
-      : purchaseKind === "patron"
-        ? "Patron membership"
-        : purchaseKind === "supporter"
-          ? "Supporter membership"
-          : "Streetlight access";
+  const tierName = tier === "patron" ? "Patron" : tier ? "Supporter" : "Reader";
+  const tierColor = tier === "patron" ? "patron" : "supporter";
 
   return (
-    <main className="success-page success-experience">
-      <section className="success-shell">
-        <div className="success-glow" aria-hidden="true" />
-
-        <div className="success-copy">
-          <p className="section-tag">Payment Successful</p>
+    <main className="success-page">
+      <div className="success-container">
+        <div className="success-celebration">
+          <div className="success-icon">
+            <svg
+              width="64"
+              height="64"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#f59e0b"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+            </svg>
+          </div>
           <h1>You&apos;re in the light.</h1>
-          <p>
-            Your {label} is being connected to your Streetlight account. Head to
-            your dashboard to see the latest access state.
-          </p>
+          <p className={`success-tier ${tierColor}`}>Welcome, {tierName}.</p>
+        </div>
 
-          <div className="success-actions">
-            <Link href="/dashboard" className="btn-primary">
-              Go to Dashboard
-            </Link>
-            <Link href="/read/chapter-one" className="btn-ghost">
-              Start Reading
-            </Link>
+        <div className="success-next">
+          <h2>What happens next</h2>
+
+          <div className="success-steps">
+            <div className="success-step">
+              <span className="step-number">1</span>
+              <div>
+                <h3>Check your email</h3>
+                <p>Your receipt and Streetlight details should arrive shortly.</p>
+              </div>
+            </div>
+
+            <div className="success-step">
+              <span className="step-number">2</span>
+              <div>
+                <h3>Start reading</h3>
+                <p>Open Chapter One or head to your dashboard for your access.</p>
+              </div>
+            </div>
+
+            <div className="success-step">
+              <span className="step-number">3</span>
+              <div>
+                <h3>Explore the extras</h3>
+                <p>Supporter and Patron content appears as your access syncs.</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <aside className="success-panel" aria-label="Purchase next steps">
-          <p className="reader-kicker">What happens next</p>
-          <div className="success-status">
-            <span>Receipt</span>
-            <strong>Complete</strong>
-          </div>
-          <div className="success-status">
-            <span>Dashboard</span>
-            <strong>Ready</strong>
-          </div>
-          <div className="success-status">
-            <span>Access Sync</span>
-            <strong>Automatic</strong>
-          </div>
-
-          <Link href="/account" className="success-download">
-            Manage Account
+        <div className="success-actions">
+          <Link href="/read/chapter-one" className="btn-primary btn-large">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+            </svg>
+            Start Reading
           </Link>
-          <small>
-            If your dashboard does not update instantly, wait a few seconds and
-            refresh. Stripe webhooks sometimes arrive after the success redirect.
-          </small>
-        </aside>
-      </section>
+
+          <Link href="/dashboard" className="btn-ghost btn-large">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+            </svg>
+            Go to Dashboard
+          </Link>
+        </div>
+
+        <div className="success-preview">
+          <h2>What you unlocked</h2>
+
+          <div className="preview-grid">
+            <div className="preview-item">
+              <span className="preview-icon">Read</span>
+              <h4>Streetlight Access</h4>
+              <p>Your payment is connected to your reader account.</p>
+            </div>
+
+            <div className="preview-item">
+              <span className="preview-icon">Book</span>
+              <h4>The Drowned Streetlamp</h4>
+              <p>Return to the story from your dashboard or the reader.</p>
+            </div>
+
+            <div className="preview-item">
+              <span className="preview-icon">Notes</span>
+              <h4>Behind the Scenes</h4>
+              <p>Supporter extras unlock as membership access syncs.</p>
+            </div>
+
+            <div className="preview-item">
+              <span className="preview-icon">Talk</span>
+              <h4>Community</h4>
+              <p>Discuss theories and lore with other readers.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="success-footer">
+          <p>
+            Questions?{" "}
+            <Link href="mailto:hello@streetlightstory.site">
+              hello@streetlightstory.site
+            </Link>
+          </p>
+          <p className="success-thanks">
+            Every street remembers something. Thank you for remembering this one.
+          </p>
+        </div>
+      </div>
     </main>
   );
 }
 
 export default function SuccessPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="success-page success-experience">
-          <section className="success-shell success-shell-centered">
-            <div className="success-copy">
-              <h1>Loading receipt...</h1>
-            </div>
-          </section>
-        </main>
-      }
-    >
+    <Suspense fallback={<SuccessLoading />}>
       <SuccessContent />
     </Suspense>
   );
