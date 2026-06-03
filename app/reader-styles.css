@@ -1,0 +1,514 @@
+/* ===== READER STYLES ===== */
+
+.book-page {
+  min-height: 100vh;
+  background: #0a0a0a;
+}
+
+.reader-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 20px 60px;
+}
+
+/* Progress bar */
+.reader-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #1a1a1a;
+  z-index: 100;
+}
+
+.reader-progress-fill {
+  height: 100%;
+  background: #f59e0b;
+  transition: width 0.3s ease;
+}
+
+/* Header */
+.reader-header {
+  position: sticky;
+  top: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #1a1a1a;
+  z-index: 50;
+  gap: 16px;
+}
+
+.reader-toc-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  background: transparent;
+  color: #a3a3a3;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.reader-toc-toggle:hover {
+  border-color: #3a3a3a;
+  color: #e5e5e5;
+}
+
+.reader-chapter-info {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+}
+
+.reader-chapter-number {
+  color: #525252;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.reader-chapter-title {
+  overflow: hidden;
+  color: #e5e5e5;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reader-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+.reader-word-count {
+  color: #525252;
+  font-size: 12px;
+}
+
+.reader-access-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #f59e0b;
+  color: #0a0a0a;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* TOC Overlay */
+.reader-toc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  justify-content: flex-start;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.reader-toc {
+  width: 320px;
+  max-width: 85vw;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid #2a2a2a;
+  background: #111111;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.reader-toc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.reader-toc-header h3 {
+  color: #e5e5e5;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.reader-toc-header button {
+  padding: 4px;
+  border: none;
+  background: none;
+  color: #737373;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.reader-toc-header button:hover {
+  color: #e5e5e5;
+}
+
+.reader-toc-chapters {
+  padding: 8px;
+}
+
+.reader-toc-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: #a3a3a3;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.reader-toc-item:hover:not(:disabled) {
+  background: #1a1a1a;
+  color: #e5e5e5;
+}
+
+.reader-toc-item.active {
+  background: #1a1a1a;
+  color: #f59e0b;
+}
+
+.reader-toc-item.locked {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.toc-number {
+  display: flex;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #1a1a1a;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.reader-toc-item.active .toc-number {
+  background: #f59e0b;
+  color: #0a0a0a;
+}
+
+.toc-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.toc-title {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.toc-subtitle {
+  display: block;
+  color: #525252;
+  font-size: 12px;
+}
+
+.toc-badge {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.toc-badge.free {
+  background: #1a451a;
+  color: #22c55e;
+}
+
+.toc-badge.unlocked {
+  background: #f59e0b;
+  color: #0a0a0a;
+}
+
+.reader-toc-cta {
+  padding: 20px;
+  border-top: 1px solid #1a1a1a;
+  text-align: center;
+}
+
+.reader-toc-cta p {
+  margin-bottom: 12px;
+  color: #a3a3a3;
+  font-size: 14px;
+}
+
+/* Chapter content */
+.reader-content {
+  padding-top: 40px;
+}
+
+.reader-chapter-header {
+  margin-bottom: 48px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid #1a1a1a;
+  text-align: center;
+}
+
+.reader-chapter-label {
+  display: block;
+  margin-bottom: 12px;
+  color: #525252;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.reader-chapter-header h1 {
+  margin-bottom: 8px;
+  color: #f59e0b;
+  font-family: "Georgia", serif;
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.reader-chapter-subtitle {
+  margin-bottom: 16px;
+  color: #737373;
+  font-size: 16px;
+  font-style: italic;
+}
+
+.reader-free-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: #1a451a;
+  color: #22c55e;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.reader-unlocked-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: #f59e0b;
+  color: #0a0a0a;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Text */
+.reader-text {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.reader-paragraph {
+  margin-bottom: 1.5em;
+  color: #d4d4d4;
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 17px;
+  hyphens: auto;
+  line-height: 1.8;
+  text-align: justify;
+}
+
+.reader-paragraph:first-of-type::first-letter {
+  float: left;
+  margin-top: 4px;
+  margin-right: 8px;
+  color: #f59e0b;
+  font-family: "Georgia", serif;
+  font-size: 3.2em;
+  line-height: 0.8;
+}
+
+.reader-break {
+  margin: 3em 0;
+  color: #525252;
+  font-size: 18px;
+  letter-spacing: 0.5em;
+  text-align: center;
+}
+
+/* Chapter navigation */
+.reader-chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid #1a1a1a;
+}
+
+.reader-nav-btn {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  max-width: 280px;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  background: #111111;
+  color: #e5e5e5;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.reader-nav-btn:hover:not(:disabled) {
+  border-color: #f59e0b;
+  background: #1a1a1a;
+}
+
+.reader-nav-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.reader-nav-btn.next {
+  margin-left: auto;
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.reader-nav-btn.next.locked {
+  border-color: #451a1a;
+  background: #1a0505;
+}
+
+.nav-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #525252;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.nav-chapter {
+  display: block;
+  color: #e5e5e5;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Lock message */
+.reader-lock-message {
+  margin-top: 48px;
+  padding: 48px 24px;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  background: #111111;
+  text-align: center;
+}
+
+.lock-icon {
+  margin-bottom: 20px;
+}
+
+.reader-lock-message h3 {
+  margin-bottom: 12px;
+  color: #e5e5e5;
+  font-family: "Georgia", serif;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.reader-lock-message > p {
+  max-width: 400px;
+  margin: 0 auto 24px;
+  color: #a3a3a3;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.lock-features {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.lock-features span {
+  color: #737373;
+  font-size: 14px;
+}
+
+.reader-lock-message .btn-primary {
+  margin-bottom: 12px;
+}
+
+.lock-note {
+  color: #525252 !important;
+  font-size: 13px !important;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .reader-container {
+    padding: 0 16px 40px;
+  }
+
+  .reader-chapter-header h1 {
+    font-size: 24px;
+  }
+
+  .reader-paragraph {
+    font-size: 16px;
+  }
+
+  .reader-chapter-nav {
+    flex-direction: column;
+  }
+
+  .reader-nav-btn {
+    max-width: 100%;
+  }
+
+  .reader-nav-btn.next {
+    margin-left: 0;
+    flex-direction: row;
+    text-align: left;
+  }
+
+  .reader-meta {
+    display: none;
+  }
+
+  .reader-chapter-title {
+    font-size: 12px;
+  }
+}
+
+/* Dark mode selection */
+.reader-paragraph::selection {
+  background: rgba(245, 158, 11, 0.3);
+  color: #e5e5e5;
+}
