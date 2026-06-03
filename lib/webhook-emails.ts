@@ -1,10 +1,8 @@
 import { sendEmail } from "@/lib/email";
-import {
-  cancellationEmail,
-  paymentFailedEmail,
-  renewalEmail,
-  welcomeEmail,
-} from "@/lib/email-templates";
+import { cancellationEmail } from "@/lib/emails/cancellation";
+import { paymentFailedEmail } from "@/lib/emails/payment-failed";
+import { renewalEmail } from "@/lib/emails/renewal";
+import { welcomeEmail } from "@/lib/emails/welcome";
 import { pricing } from "@/lib/pricing";
 import {
   createSupabaseAdminClient,
