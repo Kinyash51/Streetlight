@@ -4,18 +4,18 @@ import FadeIn from "./FadeIn";
 const quotes = [
   {
     text: "Streetlight feels like a city that's alive.",
-    author: "Early Reader",
-    detail: "Chapter One response",
+    author: "Early reader",
+    detail: "Chapter One private response",
   },
   {
     text: "Dark, beautiful, and haunting.",
-    author: "Beta Reader",
-    detail: "Early draft note",
+    author: "Beta note",
+    detail: "Private draft feedback",
   },
   {
     text: "I kept thinking about the characters long after reading.",
-    author: "Community Member",
-    detail: "Reader feedback",
+    author: "First-chapter reader",
+    detail: "Streetlight opening response",
   },
 ];
 
@@ -26,7 +26,7 @@ export default function ReaderQuotes() {
         <div className="section-head">
           <p className="section-tag">Reader Reactions</p>
           <h2>What readers are saying</h2>
-          <p>Early notes from people reading the Streetlight world.</p>
+          <p>Anonymous early notes from people reading the Streetlight world.</p>
         </div>
       </FadeIn>
 
@@ -34,8 +34,8 @@ export default function ReaderQuotes() {
         {quotes.map((quote, index) => (
           <FadeIn key={quote.text}>
             <div className="quote-card" key={index}>
-              <div className="stars" aria-label="Five star reader note">
-                ★★★★★
+              <div className="stars" aria-label="Early reader note">
+                Early note
               </div>
 
               <blockquote>
