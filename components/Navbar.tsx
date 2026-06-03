@@ -5,14 +5,9 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AuthNav from "@/components/AuthNav";
 import { SearchTrigger, type SearchChapter } from "@/components/Search";
-import { chapters } from "@/lib/chapters";
+import { getSearchChapters } from "@/lib/book-chapters";
 
-const searchChapters: SearchChapter[] = chapters.map((chapter) => ({
-  slug: chapter.slug,
-  title: chapter.title,
-  book: chapter.book,
-  content: [chapter.eyebrow, chapter.intro, ...chapter.paragraphs].join("\n\n"),
-}));
+const searchChapters: SearchChapter[] = getSearchChapters();
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);

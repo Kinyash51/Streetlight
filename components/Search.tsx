@@ -8,6 +8,7 @@ export type SearchChapter = {
   title: string;
   book: string;
   content: string;
+  href?: string;
 };
 
 type SearchResult = {
@@ -15,6 +16,7 @@ type SearchResult = {
   chapterSlug: string;
   chapterTitle: string;
   book: string;
+  href: string;
   before: string;
   match: string;
   after: string;
@@ -54,6 +56,7 @@ function findResults(chapters: SearchChapter[], query: string): SearchResult[] {
         chapterSlug: chapter.slug,
         chapterTitle: chapter.title,
         book: chapter.book,
+        href: chapter.href ?? `/read/${chapter.slug}`,
         before,
         match,
         after,
@@ -155,7 +158,7 @@ export function SearchTrigger({ chapters }: SearchTriggerProps) {
       if (event.key === "Enter") {
         event.preventDefault();
         rememberSearch(query);
-        window.location.href = `/read/${results[activeIndex].chapterSlug}`;
+        window.location.href = results[activeIndex].href;
       }
     }
 
@@ -242,7 +245,7 @@ export function SearchTrigger({ chapters }: SearchTriggerProps) {
                 {results.length ? (
                   results.map((result, index) => (
                     <Link
-                      href={`/read/${result.chapterSlug}`}
+                      href={result.href}
                       className={`search-modal-result ${
                         activeIndex === index ? "selected" : ""
                       }`}
@@ -349,7 +352,7 @@ export function SearchPage({ chapters }: SearchPageProps) {
             {results.length ? (
               results.map((result) => (
                 <Link
-                  href={`/read/${result.chapterSlug}`}
+                  href={result.href}
                   className="search-result-card"
                   key={result.id}
                 >
