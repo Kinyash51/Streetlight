@@ -11,6 +11,198 @@
   --border: rgba(255, 255, 255, 0.08);
 }
 
+/* ===== 3D EFFECTS ===== */
+
+.parallax-container {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.parallax-layer {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+.parallax-buildings {
+  top: auto;
+  bottom: 0;
+  display: flex;
+  height: 60%;
+  align-items: flex-end;
+}
+
+.buildings-svg {
+  width: 100%;
+  height: 100%;
+  opacity: .4;
+}
+
+.parallax-lamps {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  padding-bottom: 15%;
+}
+
+.lamp-post {
+  position: relative;
+  width: 4px;
+  height: 120px;
+  border-radius: 2px;
+  background: #2a2a2a;
+}
+
+.lamp-post::before {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  width: 24px;
+  height: 30px;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px 4px 12px 12px;
+  background: #1a1a1a;
+  content: "";
+  transform: translateX(-50%);
+}
+
+.lamp-glow {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 158, 11, .15) 0%, transparent 70%);
+  animation: lampPulse 4s ease-in-out infinite;
+  transform: translateX(-50%);
+}
+
+@keyframes lampPulse {
+  0%,
+  100% {
+    opacity: .6;
+    transform: translateX(-50%) scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.1);
+  }
+}
+
+.parallax-rain {
+  opacity: .3;
+}
+
+.rain-streaks {
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, .03) 2px,
+    rgba(255, 255, 255, .03) 3px
+  );
+  animation: rainDrift 20s linear infinite;
+}
+
+@keyframes rainDrift {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(100px);
+  }
+}
+
+.fog-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  mix-blend-mode: screen;
+  opacity: .6;
+  pointer-events: none;
+}
+
+.book-cover-3d-container {
+  display: inline-block;
+  padding: 40px;
+  cursor: pointer;
+  perspective: 1000px;
+}
+
+.book-cover-3d {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform .1s ease-out;
+}
+
+.book-cover-glow {
+  position: absolute;
+  inset: -40px;
+  z-index: 0;
+  border-radius: 20px;
+  pointer-events: none;
+  transition: background .1s ease-out;
+}
+
+.book-cover-image-wrapper {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, .8),
+    0 0 0 1px rgba(255, 255, 255, .05);
+}
+
+.book-cover-image-wrapper .book-cover-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.book-cover-shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: background .1s ease-out;
+}
+
+@media (max-width: 768px) {
+  .parallax-container {
+    display: none;
+  }
+
+  .book-cover-3d-container {
+    padding: 20px;
+  }
+
+  .fog-layer {
+    opacity: .3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parallax-layer,
+  .lamp-glow,
+  .rain-streaks,
+  .book-cover-3d,
+  .book-cover-glow,
+  .book-cover-shine {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 html {
   height: auto;
   min-height: 100%;

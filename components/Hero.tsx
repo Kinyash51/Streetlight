@@ -1,11 +1,15 @@
 import Link from "next/link";
 import FadeIn from "./FadeIn";
+import FogLayer from "./FogLayer";
+import ParallaxLayers from "./ParallaxLayers";
 import Rain from "./Rain";
 
 export default function Hero() {
   return (
     <section className="hero">
+      <ParallaxLayers />
       <Rain />
+      <FogLayer />
       <FadeIn>
         <div className="hero-content">
           <p className="hero-eyebrow">Urban Noir Fiction</p>
