@@ -155,6 +155,7 @@ export default function ReaderChapter({
   const [highlightSaved, setHighlightSaved] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { fontScale, mode, theme, wide } = settings;
   const readTime = useMemo(() => estimateReadTime(chapter), [chapter]);
   const canReadFullBook = access?.canReadFullBook ?? false;
@@ -395,6 +396,20 @@ export default function ReaderChapter({
           Settings
         </button>
 
+        {chapters.length > 1 && (
+          <button
+            type="button"
+            className={mobileMenuOpen ? "reader-mobile-menu active" : "reader-mobile-menu"}
+            aria-label="Open chapters"
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((value) => !value)}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+        )}
+
         <div className={settingsOpen ? "reader-settings open" : "reader-settings"}>
           <div className="reader-control-group" aria-label="Font size">
             <button type="button" onClick={decreaseFont}>
@@ -439,6 +454,38 @@ export default function ReaderChapter({
           </div>
         </div>
       </section>
+
+      {mobileMenuOpen && chapters.length > 1 && (
+        <section className="reader-mobile-dropdown" aria-label="Mobile chapters">
+          {chapters.map((item) => {
+            const locked = item.isFree === false && !canReadFullBook;
+            const active = item.slug === chapter.slug;
+            const label = item.number ? `Chapter ${item.number}` : item.title;
+
+            return locked ? (
+              <span
+                className={active ? "reader-mobile-chapter active locked" : "reader-mobile-chapter locked"}
+                key={item.slug}
+              >
+                <span>{label}</span>
+                <strong>{item.title}</strong>
+                <small>Locked</small>
+              </span>
+            ) : (
+              <Link
+                className={active ? "reader-mobile-chapter active" : "reader-mobile-chapter"}
+                href={getChapterHref(basePath, item.slug)}
+                key={item.slug}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span>{label}</span>
+                <strong>{item.title}</strong>
+                <small>{active ? "Reading" : item.isFree ? "Free" : "Unlocked"}</small>
+              </Link>
+            );
+          })}
+        </section>
+      )}
 
       {chapters.length > 1 && (
         <section className="reader-toc-strip" aria-label="Book chapters">
