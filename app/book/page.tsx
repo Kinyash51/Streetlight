@@ -206,7 +206,7 @@ export default async function BookPage({ searchParams }: BookPageProps) {
           canReadFullBook: access.canReadFullBook,
           canReadEarlyChapters: access.canReadEarlyChapters,
           canAccessSupporterNotes: access.canAccessSupporterNotes,
-          canAccessPatronExtras: access.canAccessBonusStories,
+          canAccessPatronExtras: access.canAccessPatronExtras,
         }}
         userId={user?.id ?? null}
       />
