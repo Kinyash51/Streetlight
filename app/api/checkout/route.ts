@@ -2,9 +2,30 @@ import { createStripeCheckoutSession, getCheckoutProduct } from "@/lib/stripe";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function POST(request: NextRequest) {
+async function getProductFromRequest(request: NextRequest) {
+  const contentType = request.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    const body = (await request.json().catch(() => ({}))) as {
+      product?: string;
+    };
+
+    return {
+      product: getCheckoutProduct(body.product ?? ""),
+      wantsJson: true,
+    };
+  }
+
   const formData = await request.formData();
-  const product = getCheckoutProduct(String(formData.get("product") ?? ""));
+
+  return {
+    product: getCheckoutProduct(String(formData.get("product") ?? "")),
+    wantsJson: false,
+  };
+}
+
+export async function POST(request: NextRequest) {
+  const { product, wantsJson } = await getProductFromRequest(request);
 
   if (!product) {
     return NextResponse.json({ error: "Invalid checkout product." }, { status: 400 });
@@ -16,6 +37,10 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
+    if (wantsJson) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", "/checkout");
     return NextResponse.redirect(loginUrl, 303);
@@ -34,6 +59,10 @@ export async function POST(request: NextRequest) {
         { error: "Stripe did not return a checkout URL." },
         { status: 502 }
       );
+    }
+
+    if (wantsJson) {
+      return NextResponse.json({ url: session.url });
     }
 
     return NextResponse.redirect(session.url, 303);
