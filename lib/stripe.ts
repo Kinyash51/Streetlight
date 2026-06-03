@@ -115,7 +115,7 @@ export async function createStripeCheckoutSession({
   const productConfig = getProductConfig(product);
   const params = new URLSearchParams({
     mode: productConfig.mode,
-    success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}&product=${productConfig.metadataProduct}`,
     cancel_url: `${origin}/cancel`,
     client_reference_id: userId,
     "metadata[user_id]": userId,

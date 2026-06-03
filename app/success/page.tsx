@@ -3,7 +3,22 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { pricing } from "@/lib/pricing";
 import { supabase } from "@/lib/supabase-client";
+
+type SuccessProduct = "ebook" | "supporter" | "patron" | "reader";
+
+function normalizeProduct(product: string | null): SuccessProduct {
+  if (
+    product === pricing.ebook.checkoutProduct ||
+    product === pricing.supporter.checkoutProduct ||
+    product === pricing.patron.checkoutProduct
+  ) {
+    return product;
+  }
+
+  return "reader";
+}
 
 function SuccessLoading() {
   return (
@@ -19,8 +34,11 @@ function SuccessLoading() {
 function SuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
+  const product = normalizeProduct(searchParams.get("product"));
   const [status, setStatus] = useState<"loading" | "success">("loading");
-  const [tier, setTier] = useState<string>("supporter");
+  const [tier, setTier] = useState<SuccessProduct>(
+    product === "reader" ? "supporter" : product
+  );
 
   useEffect(() => {
     const checkSession = async () => {
@@ -30,7 +48,7 @@ function SuccessContent() {
         } = await supabase.auth.getUser();
 
         if (!user) {
-          setTier("supporter");
+          setTier(product === "reader" ? "supporter" : product);
           setStatus("success");
           return;
         }
@@ -44,7 +62,9 @@ function SuccessContent() {
           .maybeSingle();
 
         if (sub?.status === "active" || sub?.status === "trialing") {
-          setTier(sub.tier || "supporter");
+          setTier(normalizeProduct(sub.tier));
+        } else if (product !== "reader") {
+          setTier(product);
         } else if (!sessionId) {
           setTier("reader");
         } else {
@@ -53,21 +73,30 @@ function SuccessContent() {
 
         setStatus("success");
       } catch {
-        setTier("supporter");
+        setTier(product === "reader" ? "supporter" : product);
         setStatus("success");
       }
     };
 
     checkSession();
-  }, [sessionId]);
+  }, [product, sessionId]);
 
   if (status === "loading") {
     return <SuccessLoading />;
   }
 
   const tierName =
-    tier === "patron" ? "Patron" : tier === "reader" ? "Reader" : "Supporter";
+    tier === "patron"
+      ? "Patron"
+      : tier === "ebook" || tier === "reader"
+        ? "Reader"
+        : "Supporter";
   const tierColor = tier === "patron" ? "patron" : "supporter";
+  const isEbook = tier === "ebook";
+  const headline = isEbook ? "Your book is ready." : "You're in the light.";
+  const accessLine = isEbook
+    ? `Your ${pricing.ebook.price} eBook purchase is ready.`
+    : `Welcome, ${tierName}.`;
 
   return (
     <main className="success-page">
@@ -86,8 +115,8 @@ function SuccessContent() {
               <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
             </svg>
           </div>
-          <h1>You&apos;re in the light.</h1>
-          <p className={`success-tier ${tierColor}`}>Welcome, {tierName}.</p>
+          <h1>{headline}</h1>
+          <p className={`success-tier ${tierColor}`}>{accessLine}</p>
         </div>
 
         <div className="success-next">
@@ -98,7 +127,11 @@ function SuccessContent() {
               <span className="step-number">1</span>
               <div>
                 <h3>Check your email</h3>
-                <p>We sent a welcome note with your membership details.</p>
+                <p>
+                  {isEbook
+                    ? "Your receipt should arrive shortly."
+                    : "We sent a welcome note with your membership details."}
+                </p>
               </div>
             </div>
 
@@ -106,7 +139,11 @@ function SuccessContent() {
               <span className="step-number">2</span>
               <div>
                 <h3>Start reading</h3>
-                <p>The reader is ready. Pick up where you left off.</p>
+                <p>
+                  {isEbook
+                    ? "Open the reader and start The Drowned Streetlamp."
+                    : "The reader is ready. Pick up where you left off."}
+                </p>
               </div>
             </div>
 
@@ -114,7 +151,11 @@ function SuccessContent() {
               <span className="step-number">3</span>
               <div>
                 <h3>Explore the extras</h3>
-                <p>Behind-the-scenes notes, early drafts, and community access.</p>
+                <p>
+                  {isEbook
+                    ? "Membership extras remain separate from the one-time eBook."
+                    : "Behind-the-scenes notes, early drafts, and community access."}
+                </p>
               </div>
             </div>
           </div>
@@ -162,20 +203,32 @@ function SuccessContent() {
           <div className="preview-grid">
             <div className="preview-item">
               <span className="preview-icon">Read</span>
-              <h4>Reader Access</h4>
-              <p>The Drowned Streetlamp is ready in your reader.</p>
+              <h4>{isEbook ? "Full eBook" : "Reader Access"}</h4>
+              <p>
+                {isEbook
+                  ? "The Drowned Streetlamp is ready in your reader."
+                  : "Your reader access is connected to your account."}
+              </p>
             </div>
 
             <div className="preview-item">
               <span className="preview-icon">Notes</span>
               <h4>Behind the Scenes</h4>
-              <p>Notes on Elias, the rain, and the city.</p>
+              <p>
+                {isEbook
+                  ? "Supporter notes are available with monthly membership."
+                  : "Notes on Elias, the rain, and the city."}
+              </p>
             </div>
 
             <div className="preview-item">
               <span className="preview-icon">Key</span>
               <h4>Early Access</h4>
-              <p>Chapter Two drafts as they develop.</p>
+              <p>
+                {isEbook
+                  ? "Future draft previews are separate membership extras."
+                  : "Chapter Two drafts as they develop."}
+              </p>
             </div>
 
             <div className="preview-item">
