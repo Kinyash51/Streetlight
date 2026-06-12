@@ -70,8 +70,8 @@ export default function Navbar() {
 
           <AuthNav />
 
-          <Link href="/checkout" className="nav-cta">
-            Buy the Book
+          <Link href="/read/chapter-one" className="nav-cta">
+            Read Free
           </Link>
 
           <button
@@ -94,8 +94,8 @@ export default function Navbar() {
         <Link href="/login" onClick={() => setOpen(false)}>Sign In</Link>
         <Link href="/dashboard" onClick={() => setOpen(false)}>Dashboard</Link>
         <Link href="/account" onClick={() => setOpen(false)}>Account</Link>
-        <Link href="/checkout" className="mobile-buy" onClick={() => setOpen(false)}>
-          Buy the Book
+        <Link href="/read/chapter-one" className="mobile-buy" onClick={() => setOpen(false)}>
+          Read Chapter One
         </Link>
       </div>
     </>

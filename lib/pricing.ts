@@ -4,8 +4,7 @@ export const pricing = {
     price: "$4.99",
     amount: 499,
     billing: "one-time purchase",
-    checkoutProduct: "ebook",
-    href: "https://buy.stripe.com/test_eVqfZj4Vg7Ro3294p77kc00",
+    productCode: "ebook",
   },
   freeReader: {
     name: "Free Reader",
@@ -15,18 +14,12 @@ export const pricing = {
     name: "Supporter",
     price: "$2.99/month",
     amount: 299,
-    checkoutProduct: "supporter",
-    href: "https://buy.stripe.com/test_bJefZj1J47Ro1Y53l37kc01",
+    productCode: "supporter",
   },
   patron: {
     name: "Patron",
     price: "$9.99/month",
     amount: 999,
-    checkoutProduct: "patron",
+    productCode: "patron",
   },
 } as const;
-
-export type CheckoutProduct =
-  | typeof pricing.ebook.checkoutProduct
-  | typeof pricing.supporter.checkoutProduct
-  | typeof pricing.patron.checkoutProduct;

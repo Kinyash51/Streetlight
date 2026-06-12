@@ -45,7 +45,7 @@ export async function getReaderAccess(
       .from("orders")
       .select("product, status")
       .eq("user_id", userId)
-      .eq("product", pricing.ebook.checkoutProduct)
+      .eq("product", pricing.ebook.productCode)
       .eq("status", "paid"),
   ]);
 
@@ -54,8 +54,8 @@ export async function getReaderAccess(
   const hasEbook = Boolean(orders?.length);
   const isActive = status === "active" || status === "trialing";
   const isSupporterOrHigher =
-    isActive && (tier === pricing.supporter.checkoutProduct || tier === pricing.patron.checkoutProduct);
-  const isPatron = isActive && tier === pricing.patron.checkoutProduct;
+    isActive && (tier === pricing.supporter.productCode || tier === pricing.patron.productCode);
+  const isPatron = isActive && tier === pricing.patron.productCode;
 
   return {
     userId,

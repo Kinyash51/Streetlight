@@ -9,8 +9,8 @@ export default function Page() {
         <p className="section-tag">Checkout</p>
         <h1>Read the story. Support the world around it.</h1>
         <p>
-          Start free, own The Drowned Streetlamp with a one-time eBook purchase,
-          or support Streetlight monthly.
+          Start free today. Paid access is temporarily paused while Streetlight
+          moves to a new payment system.
         </p>
       </section>
 
@@ -22,21 +22,21 @@ export default function Page() {
             <h2>{pricing.ebook.name}</h2>
             <p>
               Own the full eBook with a single purchase. This is not a
-              subscription and will connect to your reader account once purchase
-              tracking is active.
+              subscription. Purchasing will reopen after the new payment
+              connection is ready.
             </p>
             <div className="instant-access-note">
               <span aria-hidden="true" />
-              <strong>Read immediately after purchase</strong>
+              <strong>Payment upgrade in progress</strong>
             </div>
           </div>
 
           <div className="checkout-price-box">
             <span>{pricing.ebook.billing}</span>
             <strong>{pricing.ebook.price}</strong>
-            <Link href={pricing.ebook.href} className="btn-primary">
-              Buy eBook
-            </Link>
+            <span className="btn-primary checkout-disabled" aria-disabled="true">
+              Payments temporarily unavailable
+            </span>
             <TrustBadges />
             <CheckoutTrustNote />
           </div>
@@ -64,9 +64,9 @@ export default function Page() {
               A recurring monthly membership for early previews and behind the
               scenes notes.
             </p>
-            <Link href={pricing.supporter.href} className="btn-primary">
-              Become a Supporter
-            </Link>
+            <span className="btn-primary checkout-disabled" aria-disabled="true">
+              Payments temporarily unavailable
+            </span>
           </article>
 
           <article className="checkout-card">

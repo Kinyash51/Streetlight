@@ -359,8 +359,8 @@ export function ReaderClient({
               <span>→ Early chapter previews</span>
               <span>→ Behind-the-scenes notes</span>
             </div>
-            <Link href={pricing.supporter.href} className="btn-primary btn-large">
-              Unlock for {pricing.supporter.price}
+            <Link href="/checkout" className="btn-primary btn-large">
+              View access options
             </Link>
             <p className="lock-note">
               Or start with the {pricing.ebook.price} eBook — own it forever.

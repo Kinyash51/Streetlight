@@ -24,12 +24,11 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: verifiedClaims } = await supabase.auth.getClaims();
+  const claims = verifiedClaims?.claims;
 
   if (
-    !user &&
+    !claims &&
     (request.nextUrl.pathname.startsWith("/dashboard") ||
       request.nextUrl.pathname.startsWith("/welcome") ||
       request.nextUrl.pathname.startsWith("/account"))

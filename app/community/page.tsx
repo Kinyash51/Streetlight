@@ -53,8 +53,8 @@ const tiers: Tier[] = [
       "Supporter updates",
     ],
     cta: "Become a Supporter",
-    href: pricing.supporter.href,
     featured: true,
+    disabled: true,
   },
   {
     name: pricing.patron.name,
@@ -118,7 +118,7 @@ const faqs = [
   },
   {
     q: "Can I cancel a membership?",
-    a: "Yes. Memberships are monthly and should be manageable through the billing flow once the account billing page is fully connected.",
+    a: "Yes. Membership controls will return when the new payment connection is ready.",
   },
   {
     q: "Is Patron live?",
@@ -248,7 +248,7 @@ export default function CommunityPage() {
 
           <div className="community-status-strip">
             <span>Chapter One live</span>
-            <span>Supporter open</span>
+            <span>Payments updating</span>
             <span>Patron planned</span>
           </div>
         </FadeIn>

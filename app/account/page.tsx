@@ -16,7 +16,6 @@ type Profile = {
 type Subscription = {
   tier: string | null;
   status: string | null;
-  stripe_customer_id?: string | null;
 };
 
 type AccountAccess = {
@@ -36,7 +35,6 @@ export default function AccountPage() {
   const [displayName, setDisplayName] = useState("");
   const [savingName, setSavingName] = useState(false);
   const [nameMessage, setNameMessage] = useState<string | null>(null);
-  const [billingMessage, setBillingMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,18 +50,6 @@ export default function AccountPage() {
       }
 
       setUser(currentUser);
-      const billingStatus = new URLSearchParams(window.location.search).get(
-        "billing"
-      );
-
-      if (billingStatus === "unavailable") {
-        setBillingMessage(
-          "Billing management appears after an active membership purchase."
-        );
-      } else if (billingStatus === "error") {
-        setBillingMessage("Could not open Stripe billing. Try again later.");
-      }
-
       const [{ data: profileRow }, { data: orders }, { data: subscriptions }] =
         await Promise.all([
           supabase
@@ -75,11 +61,11 @@ export default function AccountPage() {
             .from("orders")
             .select("product, status")
             .eq("user_id", currentUser.id)
-            .eq("product", pricing.ebook.checkoutProduct)
+            .eq("product", pricing.ebook.productCode)
             .eq("status", "paid"),
           supabase
             .from("subscriptions")
-            .select("tier, status, stripe_customer_id")
+            .select("tier, status")
             .eq("user_id", currentUser.id)
             .eq("status", "active"),
         ]);
@@ -88,9 +74,9 @@ export default function AccountPage() {
         ["supporter", "patron"].includes(String(subscription.tier))
       ) as Subscription | undefined;
       const membership =
-        activeSubscription?.tier === pricing.patron.checkoutProduct
+        activeSubscription?.tier === pricing.patron.productCode
           ? pricing.patron.name
-          : activeSubscription?.tier === pricing.supporter.checkoutProduct
+          : activeSubscription?.tier === pricing.supporter.productCode
             ? pricing.supporter.name
             : pricing.freeReader.name;
 
@@ -237,30 +223,12 @@ export default function AccountPage() {
                 <strong>{access.ebookOwned ? "Purchased" : "Not purchased"}</strong>
               </div>
               <div>
-                <span>Billing portal</span>
-                <strong>
-                  {access.subscription?.stripe_customer_id
-                    ? "Available"
-                    : "Available after membership"}
-                </strong>
+                <span>Payment management</span>
+                <strong>Temporarily unavailable</strong>
               </div>
             </div>
-            {billingMessage ? (
-              <p className="account-name-message">{billingMessage}</p>
-            ) : null}
-            {access.subscription?.stripe_customer_id ? (
-              <form
-                action="/api/portal"
-                method="post"
-                className="billing-portal-form"
-              >
-                <button type="submit" className="btn-primary dashboard-action">
-                  Manage Billing
-                </button>
-              </form>
-            ) : null}
             <Link href="/checkout" className="btn-primary dashboard-action">
-              Manage Access
+              View Access Options
             </Link>
           </article>
 

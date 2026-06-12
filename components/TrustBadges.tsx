@@ -2,12 +2,12 @@ export default function TrustBadges() {
   return (
     <div className="trust-badges" aria-label="Checkout trust details">
       <div className="trust-badge">
-        <span aria-hidden="true">Lock</span>
-        <strong>Secure Stripe checkout</strong>
+        <span aria-hidden="true">Soon</span>
+        <strong>New payment connection in progress</strong>
       </div>
       <div className="trust-badge">
         <span aria-hidden="true">Now</span>
-        <strong>Instant access after purchase</strong>
+        <strong>Access will connect to your reader account</strong>
       </div>
       <div className="trust-badge">
         <span aria-hidden="true">Once</span>
@@ -20,8 +20,7 @@ export default function TrustBadges() {
 export function CheckoutTrustNote() {
   return (
     <p className="checkout-trust-note">
-      Payments are handled securely by Stripe. Supporter is monthly; the eBook
-      is charged once.
+      Paid checkout is temporarily paused. Free Chapter One remains available.
     </p>
   );
 }

@@ -139,29 +139,13 @@ export default function AuthNav() {
             Dashboard
           </Link>
 
-          {tierBadge ? (
-            <form action="/api/portal" method="post">
-              <button
-                type="submit"
-                className="auth-nav-dropdown-item"
-                onClick={() => setDropdownOpen(false)}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <rect x="1" y="4" width="22" height="16" rx="2" />
-                  <line x1="1" y1="10" x2="23" y2="10" />
-                </svg>
-                Manage Billing
-              </button>
-            </form>
-          ) : null}
+          <Link
+            href="/account"
+            className="auth-nav-dropdown-item"
+            onClick={() => setDropdownOpen(false)}
+          >
+            Account
+          </Link>
 
           <div className="auth-nav-dropdown-divider" />
 

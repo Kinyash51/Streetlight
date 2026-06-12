@@ -26,8 +26,8 @@ export default function StickyMobileCTA() {
       <Link href="/read/chapter-one" className="btn-primary">
         Read Free
       </Link>
-      <Link href="/checkout" className="btn-ghost">
-        Buy eBook
+      <Link href="/book" className="btn-ghost">
+        Explore Book
       </Link>
     </div>
   );

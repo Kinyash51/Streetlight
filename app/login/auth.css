@@ -1,4 +1,4 @@
-/* ── Auth page layout ── */
+﻿/* â”€â”€ Auth page layout â”€â”€ */
 .auth-page {
   min-height: 100vh;
   display: flex;
@@ -11,7 +11,7 @@
     var(--black);
 }
 
-/* ── Auth card ── */
+/* â”€â”€ Auth card â”€â”€ */
 .auth-card {
   max-width: 420px;
   width: 100%;
@@ -22,7 +22,7 @@
   box-shadow: 0 32px 80px rgba(0,0,0,0.5);
 }
 
-/* ── Logo ── */
+/* â”€â”€ Logo â”€â”€ */
 .auth-logo {
   display: flex;
   align-items: center;
@@ -43,16 +43,16 @@
   box-shadow: 0 0 14px rgba(240,165,0,0.15);
 }
 .auth-logo-text {
-  font-family: Georgia, serif;
+  font-family: var(--font-editorial);
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.01em;
 }
 
-/* ── Headings ── */
+/* â”€â”€ Headings â”€â”€ */
 .auth-title {
-  font-family: Georgia, serif;
+  font-family: var(--font-editorial);
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -68,7 +68,7 @@
   margin: 0 0 28px;
 }
 
-/* ── Google button ── */
+/* â”€â”€ Google button â”€â”€ */
 .auth-google-btn {
   width: 100%;
   display: flex;
@@ -80,7 +80,7 @@
   border-radius: 12px;
   background: rgba(255,255,255,0.04);
   color: var(--text-primary);
-  font-family: Georgia, serif;
+  font-family: var(--font-editorial);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -96,7 +96,7 @@
   cursor: not-allowed;
 }
 
-/* ── Divider ── */
+/* â”€â”€ Divider â”€â”€ */
 .auth-divider {
   display: flex;
   align-items: center;
@@ -117,7 +117,7 @@
   letter-spacing: 0.1em;
 }
 
-/* ── Email field ── */
+/* â”€â”€ Email field â”€â”€ */
 .auth-field {
   display: flex;
   flex-direction: column;
@@ -138,7 +138,7 @@
   border-radius: 12px;
   background: var(--black);
   color: var(--text-primary);
-  font-family: Georgia, serif;
+  font-family: var(--font-editorial);
   font-size: 0.95rem;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -156,7 +156,7 @@
   cursor: not-allowed;
 }
 
-/* ── Submit button ── */
+/* â”€â”€ Submit button â”€â”€ */
 .auth-submit-btn {
   width: 100%;
   padding: 14px 20px;
@@ -164,7 +164,7 @@
   border-radius: 12px;
   background: var(--amber);
   color: var(--black);
-  font-family: Georgia, serif;
+  font-family: var(--font-editorial);
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
@@ -186,7 +186,7 @@
   transform: none;
 }
 
-/* ── Note ── */
+/* â”€â”€ Note â”€â”€ */
 .auth-note {
   text-align: center;
   color: var(--text-secondary);
@@ -196,7 +196,7 @@
   margin-bottom: 0;
 }
 
-/* ── Spinner ── */
+/* â”€â”€ Spinner â”€â”€ */
 .auth-spinner {
   display: inline-block;
   width: 14px;
@@ -215,7 +215,7 @@
   to { transform: rotate(360deg); }
 }
 
-/* ── Email sent screen ── */
+/* â”€â”€ Email sent screen â”€â”€ */
 .auth-sent-card {
   text-align: center;
 }
@@ -230,7 +230,7 @@
   to   { transform: scale(1); opacity: 1; }
 }
 .auth-sent-title {
-  font-family: Georgia, serif;
+  font-family: var(--font-editorial);
   font-size: 1.75rem;
   font-weight: 700;
   margin: 0 0 14px;
@@ -300,7 +300,7 @@
   background: none;
   border: none;
   color: var(--amber);
-  font-family: Georgia, serif;
+  font-family: var(--font-editorial);
   font-size: 0.82rem;
   cursor: pointer;
   padding: 0;
@@ -319,7 +319,7 @@
   border-radius: 12px;
   background: transparent;
   color: var(--text-secondary);
-  font-family: Georgia, serif;
+  font-family: var(--font-editorial);
   font-size: 0.875rem;
   transition: all 0.2s ease;
   text-decoration: none;
@@ -329,7 +329,7 @@
   color: var(--amber);
 }
 
-/* ── Footer note ── */
+/* â”€â”€ Footer note â”€â”€ */
 .auth-footer {
   text-align: center;
   margin-top: 24px;
@@ -458,7 +458,7 @@
 .login-header h1 {
   margin: 0 0 8px;
   color: var(--amber);
-  font-family: Georgia, serif;
+  font-family: var(--font-editorial);
   font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 400;
 }

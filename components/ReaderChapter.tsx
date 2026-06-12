@@ -8,7 +8,6 @@ import {
   writeLocalHighlights,
   type LocalHighlight,
 } from "@/lib/local-highlights";
-import { pricing } from "@/lib/pricing";
 import ShareButtons from "./ShareButtons";
 
 type ReaderMode = "scroll" | "page";
@@ -336,8 +335,8 @@ export default function ReaderChapter({
     <main className={`reader-page reader-theme-${theme}`}>
       <section className="reader-chrome">
         <div>
-          <Link href="/dashboard" className="reader-back">
-            Back to dashboard
+          <Link href="/book" className="reader-back">
+            Back to book
           </Link>
           <p className="section-tag">{chapter.book}</p>
           <h1>{chapter.title}</h1>
@@ -591,8 +590,8 @@ export default function ReaderChapter({
             <span>Reader progress</span>
           </div>
           <div className="reader-lock-actions">
-            <Link href={pricing.ebook.href} className="btn-primary">
-              Buy the eBook for {pricing.ebook.price}
+            <Link href="/checkout" className="btn-primary">
+              View eBook access
             </Link>
             <Link href="/community" className="btn-ghost">
               View memberships
@@ -665,8 +664,8 @@ export default function ReaderChapter({
               </Link>
             ) : (
               <>
-                <Link href={pricing.ebook.href} className="btn-primary">
-                  Buy the eBook for {pricing.ebook.price}
+                <Link href="/checkout" className="btn-primary">
+                  View eBook access
                 </Link>
                 <Link href="/community" className="btn-ghost">
                   Become a Supporter

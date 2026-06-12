@@ -180,7 +180,7 @@
   font-size: 28px;
   font-weight: 400;
   color: #f59e0b;
-  font-family: 'Georgia', serif;
+  font-family: var(--font-editorial);
   margin-bottom: 8px;
 }
 
@@ -417,7 +417,7 @@
   font-size: 24px;
   font-weight: 400;
   color: #e5e5e5;
-  font-family: 'Georgia', serif;
+  font-family: var(--font-editorial);
   margin-bottom: 4px;
 }
 
@@ -719,7 +719,7 @@
   font-size: 32px;
   font-weight: 400;
   color: #f59e0b;
-  font-family: 'Georgia', serif;
+  font-family: var(--font-editorial);
   margin-bottom: 8px;
 }
 
@@ -894,7 +894,7 @@
   font-size: 28px;
   font-weight: 400;
   color: #f59e0b;
-  font-family: 'Georgia', serif;
+  font-family: var(--font-editorial);
   margin-bottom: 12px;
 }
 
@@ -1053,7 +1053,7 @@
   font-size: 24px;
   font-weight: 400;
   color: #f59e0b;
-  font-family: 'Georgia', serif;
+  font-family: var(--font-editorial);
   margin-bottom: 12px;
 }
 

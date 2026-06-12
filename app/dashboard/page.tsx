@@ -119,7 +119,7 @@ export default function DashboardPage() {
           {isPastDue && (
             <div className="membership-status past-due">
               <span className="status-dot" />
-              <span>Payment failed — update your card</span>
+              <span>Payment needs attention</span>
             </div>
           )}
 
@@ -137,20 +137,9 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {isActive && (
-            <form action="/api/portal" method="post" className="membership-billing">
-              <button type="submit" className="btn-ghost">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
-                </svg>
-                Manage Billing
-              </button>
-            </form>
-          )}
-
           {!isActive && (
-            <Link href="/community" className="btn-primary">
-              Become a Supporter
+            <Link href="/checkout" className="btn-primary">
+              View Access Options
             </Link>
           )}
         </div>
