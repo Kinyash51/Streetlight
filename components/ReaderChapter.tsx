@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type MouseEvent,
+} from "react";
 import Link from "next/link";
 import type { ClientAccess } from "@/lib/access-control";
 import {
@@ -9,8 +15,15 @@ import {
   type LocalHighlight,
 } from "@/lib/local-highlights";
 import ShareButtons from "./ShareButtons";
+import { BetaChapterReview, ParagraphFeedback } from "./BetaFeedback";
+import {
+  readerBookmarksKey,
+  readReaderBookmarks,
+  writeReaderProgress,
+  type ReaderMode,
+  type ReaderProgress,
+} from "@/lib/reader-progress";
 
-type ReaderMode = "scroll" | "page";
 type ReaderTheme = "dark" | "amber" | "paper";
 
 type ReaderChapterData = {
@@ -36,9 +49,6 @@ type ReaderChapterProps = {
 };
 
 const readerSettingsKey = "streetlight-reader-settings";
-const readerProgressKey = "streetlight-reader-progress";
-const readerBookmarksKey = "streetlight-reader-bookmarks";
-
 const defaultReaderSettings: ReaderSettings = {
   mode: "scroll",
   theme: "dark",
@@ -53,15 +63,6 @@ type ReaderSettings = {
   wide: boolean;
 };
 
-type ReaderProgress = {
-  chapterSlug: string;
-  chapterTitle: string;
-  mode: ReaderMode;
-  pageIndex: number;
-  progressPercent: number;
-  lastOpenedAt: string;
-};
-
 function estimateReadTime(chapter: ReaderChapterData) {
   const wordCount = [chapter.intro, ...chapter.paragraphs].join(" ").split(/\s+/).length;
   const minutes = Math.max(1, Math.ceil(wordCount / 210));
@@ -69,27 +70,8 @@ function estimateReadTime(chapter: ReaderChapterData) {
   return `${minutes} min read`;
 }
 
-function writeReaderProgress(progressSnapshot: ReaderProgress) {
-  window.localStorage.setItem(readerProgressKey, JSON.stringify(progressSnapshot));
-}
-
 function readBookmarks() {
-  const savedBookmarks = window.localStorage.getItem(readerBookmarksKey);
-
-  if (!savedBookmarks) {
-    return [];
-  }
-
-  try {
-    const parsedBookmarks = JSON.parse(savedBookmarks);
-
-    return Array.isArray(parsedBookmarks)
-      ? parsedBookmarks.filter((bookmark): bookmark is string => typeof bookmark === "string")
-      : [];
-  } catch {
-    window.localStorage.removeItem(readerBookmarksKey);
-    return [];
-  }
+  return readReaderBookmarks();
 }
 
 function isReaderMode(value: unknown): value is ReaderMode {
@@ -156,9 +138,15 @@ export default function ReaderChapter({
   const [bookmarked, setBookmarked] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const [chapterReaction, setChapterReaction] = useState("");
   const { fontScale, mode, theme, wide } = settings;
   const readTime = useMemo(() => estimateReadTime(chapter), [chapter]);
   const canReadFullBook = access?.canReadFullBook ?? false;
+  const betaApplicationId = access?.betaApplicationId ?? null;
+  const canLeaveBetaFeedback = Boolean(
+    access?.isBetaReader && betaApplicationId && userId,
+  );
   const canReadCurrentChapter = chapter.isFree !== false || canReadFullBook;
   const currentChapterIndex = chapters.findIndex((item) => item.slug === chapter.slug);
   const nextChapter =
@@ -175,6 +163,9 @@ export default function ReaderChapter({
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setBookmarked(readBookmarks().includes(chapter.slug));
+      setChapterReaction(
+        window.localStorage.getItem(`streetlight-reaction-${chapter.slug}`) ?? "",
+      );
     }, 0);
 
     return () => window.clearTimeout(timer);
@@ -260,6 +251,32 @@ export default function ReaderChapter({
     };
   }, [mode, saveProgress]);
 
+  useEffect(() => {
+    if (!settingsOpen) {
+      return;
+    }
+
+    function closeSettings(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setSettingsOpen(false);
+      }
+    }
+
+    document.body.classList.add("reader-sheet-open");
+    window.addEventListener("keydown", closeSettings);
+
+    return () => {
+      document.body.classList.remove("reader-sheet-open");
+      window.removeEventListener("keydown", closeSettings);
+    };
+  }, [settingsOpen]);
+
+  useEffect(() => {
+    document.body.classList.toggle("reader-focus-mode", !controlsVisible);
+
+    return () => document.body.classList.remove("reader-focus-mode");
+  }, [controlsVisible]);
+
   function updatePageIndex(nextPageIndex: number) {
     setPageIndex(nextPageIndex);
     saveProgress(
@@ -331,8 +348,32 @@ export default function ReaderChapter({
     window.setTimeout(() => setToastMessage(""), 2400);
   }
 
+  function toggleReaderChrome(event: MouseEvent<HTMLElement>) {
+    const target = event.target as HTMLElement;
+
+    if (
+      target.closest("button, a, textarea, input, label") ||
+      window.getSelection()?.toString().trim()
+    ) {
+      return;
+    }
+
+    setControlsVisible((visible) => !visible);
+  }
+
+  function saveChapterReaction(reaction: string) {
+    setChapterReaction(reaction);
+    window.localStorage.setItem(`streetlight-reaction-${chapter.slug}`, reaction);
+    setToastMessage("Reaction saved on this device.");
+    window.setTimeout(() => setToastMessage(""), 2400);
+  }
+
   return (
-    <main className={`reader-page reader-theme-${theme}`}>
+    <main
+      className={`reader-page reader-theme-${theme} ${
+        controlsVisible ? "" : "reader-controls-hidden"
+      }`}
+    >
       <section className="reader-chrome">
         <div>
           <Link href="/book" className="reader-back">
@@ -364,36 +405,18 @@ export default function ReaderChapter({
           onClick={toggleBookmark}
           aria-pressed={bookmarked}
         >
-          {bookmarked ? "Bookmarked" : "Bookmark"}
+          {bookmarked ? "Saved" : "Save"}
         </button>
-
-        <div className="reader-toggle" aria-label="Reading mode">
-          <button
-            type="button"
-            className={mode === "scroll" ? "active" : ""}
-            onClick={() => {
-              saveSettings({ ...settings, mode: "scroll" });
-              setPageIndex(0);
-            }}
-          >
-            Scroll
-          </button>
-          <button
-            type="button"
-            className={mode === "page" ? "active" : ""}
-            onClick={() => saveSettings({ ...settings, mode: "page" })}
-          >
-            Page
-          </button>
-        </div>
 
         <button
           type="button"
           className={settingsOpen ? "reader-settings-button active" : "reader-settings-button"}
           aria-expanded={settingsOpen}
+          aria-controls="reader-settings-sheet"
           onClick={() => setSettingsOpen((value) => !value)}
         >
-          Settings
+          <span aria-hidden="true">Aa</span>
+          Appearance
         </button>
 
         {chapters.length > 1 && (
@@ -404,56 +427,116 @@ export default function ReaderChapter({
             aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen((value) => !value)}
           >
-            <span />
-            <span />
-            <span />
+            Chapters
           </button>
         )}
-
-        <div className={settingsOpen ? "reader-settings open" : "reader-settings"}>
-          <div className="reader-control-group" aria-label="Font size">
-            <button type="button" onClick={decreaseFont}>
-              A-
-            </button>
-            <span>{Math.round(fontScale * 100)}%</span>
-            <button type="button" onClick={increaseFont}>
-              A+
-            </button>
-          </div>
-
-          <button
-            type="button"
-            className={wide ? "reader-tool active" : "reader-tool"}
-            onClick={() => saveSettings({ ...settings, wide: !wide })}
-          >
-            {wide ? "Focused width" : "Wide width"}
-          </button>
-
-          <div className="reader-toggle" aria-label="Reader theme">
-            <button
-              type="button"
-              className={theme === "dark" ? "active" : ""}
-              onClick={() => saveSettings({ ...settings, theme: "dark" })}
-            >
-              Dark
-            </button>
-            <button
-              type="button"
-              className={theme === "amber" ? "active" : ""}
-              onClick={() => saveSettings({ ...settings, theme: "amber" })}
-            >
-              Amber
-            </button>
-            <button
-              type="button"
-              className={theme === "paper" ? "active" : ""}
-              onClick={() => saveSettings({ ...settings, theme: "paper" })}
-            >
-              Paper
-            </button>
-          </div>
-        </div>
       </section>
+
+      {settingsOpen ? (
+        <div
+          className="reader-sheet-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setSettingsOpen(false);
+            }
+          }}
+        >
+          <section
+            className="reader-settings-sheet"
+            id="reader-settings-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reader-settings-title"
+          >
+            <div className="reader-sheet-handle" aria-hidden="true" />
+            <header>
+              <div>
+                <p className="section-tag">Reading preferences</p>
+                <h2 id="reader-settings-title">Make the page yours.</h2>
+              </div>
+              <button
+                type="button"
+                className="reader-sheet-close"
+                onClick={() => setSettingsOpen(false)}
+                aria-label="Close reading preferences"
+              >
+                Done
+              </button>
+            </header>
+
+            <div className="reader-setting-row">
+              <div>
+                <strong>Text size</strong>
+                <span>Adjust for comfortable reading.</span>
+              </div>
+              <div className="reader-control-group" aria-label="Font size">
+                <button type="button" onClick={decreaseFont} aria-label="Decrease text size">
+                  A-
+                </button>
+                <span>{Math.round(fontScale * 100)}%</span>
+                <button type="button" onClick={increaseFont} aria-label="Increase text size">
+                  A+
+                </button>
+              </div>
+            </div>
+
+            <div className="reader-setting-row">
+              <div>
+                <strong>Reading mode</strong>
+                <span>Continuous scroll or focused pages.</span>
+              </div>
+              <div className="reader-toggle" aria-label="Reading mode">
+                <button
+                  type="button"
+                  className={mode === "scroll" ? "active" : ""}
+                  onClick={() => {
+                    saveSettings({ ...settings, mode: "scroll" });
+                    setPageIndex(0);
+                  }}
+                >
+                  Scroll
+                </button>
+                <button
+                  type="button"
+                  className={mode === "page" ? "active" : ""}
+                  onClick={() => saveSettings({ ...settings, mode: "page" })}
+                >
+                  Page
+                </button>
+              </div>
+            </div>
+
+            <div className="reader-setting-row">
+              <div>
+                <strong>Page width</strong>
+                <span>Focused for long sessions, wide for larger screens.</span>
+              </div>
+              <button
+                type="button"
+                className={wide ? "reader-sheet-option active" : "reader-sheet-option"}
+                onClick={() => saveSettings({ ...settings, wide: !wide })}
+              >
+                {wide ? "Wide" : "Focused"}
+              </button>
+            </div>
+
+            <div className="reader-theme-options" aria-label="Reader theme">
+              {(["dark", "amber", "paper"] as ReaderTheme[]).map((option) => (
+                <button
+                  type="button"
+                  className={theme === option ? `active ${option}` : option}
+                  aria-pressed={theme === option}
+                  key={option}
+                  onClick={() => saveSettings({ ...settings, theme: option })}
+                >
+                  <span aria-hidden="true">Aa</span>
+                  {option}
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       {mobileMenuOpen && chapters.length > 1 && (
         <section className="reader-mobile-dropdown" aria-label="Mobile chapters">
@@ -529,14 +612,37 @@ export default function ReaderChapter({
           style={{ fontSize: `${fontScale}rem` }}
           onMouseUp={captureSelection}
           onTouchEnd={captureSelection}
+          onClick={toggleReaderChrome}
         >
           <p className="reader-kicker">{chapter.eyebrow}</p>
 
           {mode === "scroll" ? (
             <>
-              <p className="reader-intro">{chapter.intro}</p>
-              {chapter.paragraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
+              <div className="reader-paragraph-block">
+                <p className="reader-intro">{chapter.intro}</p>
+                {canLeaveBetaFeedback && betaApplicationId && userId ? (
+                  <ParagraphFeedback
+                    applicationId={betaApplicationId}
+                    userId={userId}
+                    chapterSlug={chapter.slug}
+                    paragraphIndex={0}
+                    selectedText={chapter.intro}
+                  />
+                ) : null}
+              </div>
+              {chapter.paragraphs.map((paragraph, index) => (
+                <div className="reader-paragraph-block" key={`${index}-${paragraph}`}>
+                  <p>{paragraph}</p>
+                  {canLeaveBetaFeedback && betaApplicationId && userId ? (
+                    <ParagraphFeedback
+                      applicationId={betaApplicationId}
+                      userId={userId}
+                      chapterSlug={chapter.slug}
+                      paragraphIndex={index + 1}
+                      selectedText={paragraph}
+                    />
+                  ) : null}
+                </div>
               ))}
             </>
           ) : (
@@ -581,17 +687,17 @@ export default function ReaderChapter({
           <span className="lock-icon">Locked</span>
           <h2>{chapter.title} is waiting.</h2>
           <p>
-            Chapter One stays free. Unlock the full eBook once, or support
-            monthly to read every available chapter and future supporter drops.
+            Chapter One stays free. Apply for the private beta program to read
+            the available draft and leave feedback while payments are offline.
           </p>
           <div className="lock-features">
-            <span>Full eBook access</span>
-            <span>Supporter chapters</span>
-            <span>Reader progress</span>
+            <span>Available draft chapters</span>
+            <span>Private paragraph notes</span>
+            <span>Chapter reviews</span>
           </div>
           <div className="reader-lock-actions">
-            <Link href="/checkout" className="btn-primary">
-              View eBook access
+            <Link href="/beta" className="btn-primary">
+              Apply for Beta Access
             </Link>
             <Link href="/community" className="btn-ghost">
               View memberships
@@ -633,6 +739,16 @@ export default function ReaderChapter({
         </div>
       ) : null}
 
+      {!controlsVisible ? (
+        <button
+          type="button"
+          className="reader-show-controls"
+          onClick={() => setControlsVisible(true)}
+        >
+          Show controls
+        </button>
+      ) : null}
+
       {canReadCurrentChapter && (
         <section className="reader-endcap">
           <p className="section-tag">
@@ -648,38 +764,78 @@ export default function ReaderChapter({
           <p>
             {nextChapter
               ? nextChapter.isFree === false && !canReadFullBook
-                ? "Continue exploring the rain-soaked world of Streetlight by unlocking the full eBook or joining as a monthly supporter."
+                ? "Apply for the private beta program to continue through the available draft and help shape the story."
                 : "The next part of the city is ready when you are."
               : "More Streetlight pages will appear here as the book grows."}
           </p>
-          <div className="reader-lock-actions">
-            {previousChapter && (
-              <Link href={getChapterHref(basePath, previousChapter.slug)} className="btn-ghost">
-                Previous chapter
-              </Link>
-            )}
+          <div className="reader-reactions" aria-label="React to this chapter">
+            <span>How did it feel?</span>
+            <div>
+              {[
+                ["hooked", "Hooked"],
+                ["haunted", "Haunted"],
+                ["curious", "Curious"],
+                ["heavy", "Heavy"],
+              ].map(([value, label]) => (
+                <button
+                  type="button"
+                  className={chapterReaction === value ? "active" : ""}
+                  aria-pressed={chapterReaction === value}
+                  key={value}
+                  onClick={() => saveChapterReaction(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="reader-endcap-primary">
             {nextChapter && (nextChapter.isFree !== false || canReadFullBook) ? (
               <Link href={getChapterHref(basePath, nextChapter.slug)} className="btn-primary">
                 Read {nextChapter.title}
               </Link>
-            ) : (
+            ) : nextChapter ? (
               <>
-                <Link href="/checkout" className="btn-primary">
-                  View eBook access
+                <Link href="/beta" className="btn-primary">
+                  Apply for Beta Access
                 </Link>
                 <Link href="/community" className="btn-ghost">
-                  Become a Supporter
+                  Explore the Community
                 </Link>
               </>
+            ) : (
+              <Link href="/book" className="btn-primary">
+                Return to the book
+              </Link>
             )}
           </div>
-          <ShareButtons
-            title={`Streetlight - ${chapter.title}`}
-            text={`Read ${chapter.title} from The Drowned Streetlamp.`}
-            path={getChapterHref(basePath, chapter.slug)}
-          />
+          <details className="reader-endcap-more">
+            <summary>More chapter actions</summary>
+            <div className="reader-endcap-secondary">
+              {previousChapter ? (
+                <Link href={getChapterHref(basePath, previousChapter.slug)}>
+                  Previous chapter
+                </Link>
+              ) : null}
+              <Link href="/book">Book overview</Link>
+              <Link href="/highlights">Saved highlights</Link>
+            </div>
+            <ShareButtons
+              title={`Streetlight - ${chapter.title}`}
+              text={`Read ${chapter.title} from The Drowned Streetlamp.`}
+              path={getChapterHref(basePath, chapter.slug)}
+            />
+          </details>
         </section>
       )}
+
+      {canLeaveBetaFeedback && betaApplicationId && userId ? (
+        <BetaChapterReview
+          applicationId={betaApplicationId}
+          userId={userId}
+          chapterSlug={chapter.slug}
+        />
+      ) : null}
     </main>
   );
 }

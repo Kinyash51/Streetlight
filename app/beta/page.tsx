@@ -1,9 +1,10 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase-client";
+import type { User } from "@supabase/supabase-js";
 
 type BetaForm = {
   name: string;
@@ -24,13 +25,54 @@ const initialForm: BetaForm = {
 };
 
 export default function BetaPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
   const [form, setForm] = useState<BetaForm>(initialForm);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    async function loadApplicant() {
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+
+      setUser(currentUser);
+
+      if (currentUser) {
+        const { data: application } = await supabase
+          .from("beta_applications")
+          .select("status")
+          .eq("user_id", currentUser.id)
+          .maybeSingle();
+
+        setApplicationStatus(application?.status ?? null);
+        setForm((current) => ({
+          ...current,
+          name:
+            currentUser.user_metadata?.name ??
+            currentUser.user_metadata?.username ??
+            current.name,
+          email: currentUser.email ?? current.email,
+        }));
+      }
+
+      setAuthLoading(false);
+    }
+
+    loadApplicant();
+  }, []);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!user) {
+      setError("Sign in before submitting your application.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -38,6 +80,7 @@ export default function BetaPage() {
       const { error: submitError } = await supabase
         .from("beta_applications")
         .insert({
+          user_id: user.id,
           name: form.name.trim(),
           email: form.email.trim(),
           why_noir: form.whyNoir.trim(),
@@ -47,6 +90,7 @@ export default function BetaPage() {
         });
 
       if (submitError) throw submitError;
+      setApplicationStatus("pending");
       setSubmitted(true);
     } catch (caughtError) {
       const message =
@@ -58,6 +102,78 @@ export default function BetaPage() {
       setLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <main className="beta-page">
+        <div className="beta-container beta-gate">
+          <p className="section-tag">Beta Readers</p>
+          <h1>Checking your application...</h1>
+        </div>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="beta-page">
+        <div className="beta-container beta-gate">
+          <p className="section-tag">Private Reader Program</p>
+          <h1>Sign in before applying.</h1>
+          <p>
+            Your account keeps the draft private and connects every paragraph
+            note to your application.
+          </p>
+          <Link href="/login?next=/beta" className="btn-primary">
+            Sign In to Apply
+          </Link>
+          <Link href="/read/chapter-one" className="btn-ghost">
+            Read Chapter One First
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  if (applicationStatus && !submitted) {
+    const statusCopy: Record<string, { title: string; body: string }> = {
+      pending: {
+        title: "Your application is under review.",
+        body: "You will see the decision here as soon as the beta application is reviewed.",
+      },
+      approved: {
+        title: "You are an approved beta reader.",
+        body: "The complete available draft and private feedback tools are now open in your reader.",
+      },
+      completed: {
+        title: "Beta reading completed.",
+        body: "Your notes are saved. Thank you for helping shape Streetlight.",
+      },
+      rejected: {
+        title: "This beta round is full.",
+        body: "Your account remains ready for a future Streetlight reading round.",
+      },
+    };
+    const status = statusCopy[applicationStatus] ?? statusCopy.pending;
+
+    return (
+      <main className="beta-page">
+        <div className="beta-container beta-gate">
+          <span className={`beta-status beta-status-${applicationStatus}`}>
+            {applicationStatus}
+          </span>
+          <h1>{status.title}</h1>
+          <p>{status.body}</p>
+          <Link
+            href={applicationStatus === "approved" ? "/book" : "/dashboard"}
+            className="btn-primary"
+          >
+            {applicationStatus === "approved" ? "Open the Draft" : "View Dashboard"}
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   if (submitted) {
     return (
@@ -175,7 +291,8 @@ export default function BetaPage() {
               }
               placeholder="you@example.com"
               required
-              disabled={loading}
+              readOnly
+              aria-readonly="true"
             />
           </div>
 
@@ -286,8 +403,8 @@ export default function BetaPage() {
 
         <div className="beta-footer">
           <p>
-            Already a Supporter?{" "}
-            <Link href="/dashboard">Check your dashboard</Link> for beta access.
+            Your application and private feedback status will appear on your{" "}
+            <Link href="/dashboard">reader dashboard</Link>.
           </p>
         </div>
       </div>

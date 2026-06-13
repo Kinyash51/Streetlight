@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 type ShareButtonsProps = {
   title: string;
@@ -10,13 +10,7 @@ type ShareButtonsProps = {
 
 export default function ShareButtons({ title, text, path = "/" }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
-  const shareUrl = useMemo(() => {
-    if (typeof window === "undefined") {
-      return `https://streetlightstory.site${path}`;
-    }
-
-    return new URL(path, window.location.origin).toString();
-  }, [path]);
+  const shareUrl = `https://streetlightstory.site${path}`;
   const encodedUrl = encodeURIComponent(shareUrl);
   const encodedText = encodeURIComponent(text);
 

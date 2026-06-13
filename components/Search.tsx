@@ -177,7 +177,20 @@ export function SearchTrigger({ chapters }: SearchTriggerProps) {
         }}
         aria-label="Search Streetlight"
       >
-        <span aria-hidden="true">Search</span>
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-4-4" />
+        </svg>
+        <span className="nav-search-label">Search</span>
         <kbd>Ctrl K</kbd>
       </button>
 
@@ -199,7 +212,18 @@ export function SearchTrigger({ chapters }: SearchTriggerProps) {
           >
             <div className="search-modal-input-wrap">
               <span className="search-modal-icon" aria-hidden="true">
-                Search
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-4-4" />
+                </svg>
               </span>
               <input
                 ref={inputRef}
@@ -302,7 +326,18 @@ export function SearchPage({ chapters }: SearchPageProps) {
 
         <div className="search-page-input-wrapper">
           <span className="search-page-input-icon" aria-hidden="true">
-            Search
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-4-4" />
+            </svg>
           </span>
           <input
             type="search"

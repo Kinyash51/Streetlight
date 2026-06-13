@@ -24,11 +24,8 @@ export default function FeaturedBook() {
           </p>
 
           <div className="book-actions">
-            <Link href="/read/chapter-one" className="btn-primary">
-              Start Chapter One
-            </Link>
-            <Link href="/book" className="btn-ghost">
-              Explore the Book
+            <Link href="/book" className="btn-primary">
+              View book and chapters
             </Link>
           </div>
         </div>

@@ -6,13 +6,15 @@ import CommunityCTA from "@/components/CommunityCTA";
 import ReaderQuotes from "@/components/ReaderQuotes";
 import NewsletterCapture from "@/components/NewsletterCapture";
 import ScrollProgress from "@/components/ScrollProgress";
-import StickyMobileCTA from "@/components/StickyMobileCTA";
+import ContinueReading from "@/components/ContinueReading";
+import { getReaderChapters } from "@/lib/book-chapters";
 
 export default function HomePage() {
   return (
     <>
       <ScrollProgress />
       <main>
+        <ContinueReading chapters={getReaderChapters()} />
         <Hero />
         <FeaturedBook />
         <WhyStreetlight />
@@ -21,7 +23,6 @@ export default function HomePage() {
         <CommunityCTA />
       </main>
       <NewsletterCapture />
-      <StickyMobileCTA />
     </>
   );
 }

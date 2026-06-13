@@ -5,7 +5,15 @@ import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase-client";
 
-export default function AuthNav() {
+type AuthNavProps = {
+  variant?: "desktop" | "mobile";
+  onNavigate?: () => void;
+};
+
+export default function AuthNav({
+  variant = "desktop",
+  onNavigate,
+}: AuthNavProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -60,10 +68,24 @@ export default function AuthNav() {
   }
 
   if (loading) {
-    return <div className="auth-nav-skeleton" />;
+    return <div className={`auth-nav-skeleton auth-nav-${variant}`} />;
   }
 
   if (!user) {
+    if (variant === "mobile") {
+      return (
+        <div className="mobile-account-card">
+          <div>
+            <strong>Your reader account</strong>
+            <span>Save progress, apply for beta, and manage access.</span>
+          </div>
+          <Link href="/login" className="btn-primary" onClick={onNavigate}>
+            Sign in
+          </Link>
+        </div>
+      );
+    }
+
     return (
       <Link href="/login" className="auth-nav-signin">
         Sign In
@@ -77,6 +99,31 @@ export default function AuthNav() {
 
   const tierBadge =
     tier === "patron" ? "patron" : tier === "supporter" ? "supporter" : null;
+
+  if (variant === "mobile") {
+    return (
+      <div className="mobile-account-card signed-in">
+        <div className="mobile-account-identity">
+          <span className="auth-nav-avatar">{initials}</span>
+          <span>
+            <strong>{displayName}</strong>
+            <small>{user.email}</small>
+          </span>
+        </div>
+        <div className="mobile-account-actions">
+          <Link href="/dashboard" onClick={onNavigate}>
+            Dashboard
+          </Link>
+          <Link href="/account" onClick={onNavigate}>
+            Account
+          </Link>
+          <button type="button" onClick={handleSignOut}>
+            Sign out
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-nav">

@@ -10,8 +10,9 @@ The application currently needs these tables:
 - `orders`: provider-neutral one-time eBook purchases.
 - `subscriptions`: provider-neutral Supporter and Patron access.
 - `newsletter_subscribers`: homepage newsletter signups.
-- `beta_applications`: public beta-reader applications.
-- `beta_feedback`: future paragraph-level beta feedback.
+- `beta_applications`: authenticated beta-reader applications and review status.
+- `beta_feedback`: private paragraph-level beta feedback.
+- `beta_chapter_reviews`: private end-of-chapter beta reviews.
 
 Reader highlights and reading progress are still stored in the browser, not Supabase.
 No Supabase Storage bucket is currently required.
@@ -40,6 +41,15 @@ this immediately afterward:
 
 That migration preserves existing order/subscription rows while renaming their
 payment fields for the next provider.
+
+If you already ran the complete setup before the beta feedback system was
+added, also run:
+
+`supabase/beta-feedback-upgrade.sql`
+
+This connects applications to authenticated users, adds secure feedback
+policies, and creates chapter reviews. Existing anonymous applications remain
+in the table but need a `user_id` before their owners can see them.
 
 ## 3. Copy API Keys
 
@@ -160,7 +170,7 @@ provider fields so payment access can be restored without another database reset
 Test in this order:
 
 1. Submit the homepage newsletter form.
-2. Submit `/beta`.
+2. Sign in, submit `/beta`, and confirm the application appears on `/dashboard`.
 3. Create an email/password account and confirm its email.
 4. Verify a matching row appears in `public.profiles`.
 5. Sign out and back in.
@@ -168,6 +178,8 @@ Test in this order:
 7. Test GitHub login.
 8. Update the display name on `/account`.
 9. Confirm the signed-in user can read only their own purchase data.
+10. Approve a beta application in Supabase, then confirm the draft and private
+    feedback tools appear in `/book`.
 
 Useful SQL checks:
 
@@ -175,6 +187,8 @@ Useful SQL checks:
 select id, email, username, created_at from public.profiles order by created_at desc;
 select email, source, status, created_at from public.newsletter_subscribers order by created_at desc;
 select name, email, status, created_at from public.beta_applications order by created_at desc;
+select chapter_slug, paragraph_index, feedback_type, created_at from public.beta_feedback order by created_at desc;
+select chapter_slug, rating, continue_reading, updated_at from public.beta_chapter_reviews order by updated_at desc;
 select user_id, product, status, created_at from public.orders order by created_at desc;
 select user_id, tier, status, created_at from public.subscriptions order by created_at desc;
 ```

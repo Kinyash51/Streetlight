@@ -66,6 +66,7 @@ create table if not exists public.newsletter_subscribers (
 
 create table if not exists public.beta_applications (
   id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
   name text not null,
   email text not null,
   why_noir text,
@@ -75,7 +76,10 @@ create table if not exists public.beta_applications (
   status text not null default 'pending'
     check (status in ('pending', 'approved', 'rejected', 'completed')),
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   approved_at timestamptz,
+  reviewed_at timestamptz,
+  reading_deadline timestamptz,
   approved_by uuid references auth.users(id) on delete set null
 );
 
@@ -83,12 +87,32 @@ create table if not exists public.beta_feedback (
   id uuid primary key default gen_random_uuid(),
   application_id uuid not null
     references public.beta_applications(id) on delete cascade,
-  chapter text,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  chapter_slug text not null,
   paragraph_index integer check (paragraph_index is null or paragraph_index >= 0),
+  selected_text text,
   feedback_type text
-    check (feedback_type in ('plot', 'character', 'pacing', 'prose', 'world', 'typo', 'other')),
+    check (feedback_type in ('loved', 'confusing', 'pacing', 'character', 'world', 'prose', 'typo', 'other')),
   comment text not null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.beta_chapter_reviews (
+  id uuid primary key default gen_random_uuid(),
+  application_id uuid not null
+    references public.beta_applications(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  chapter_slug text not null,
+  rating integer not null check (rating between 1 and 5),
+  attention_drop text,
+  confusing text,
+  memorable_moment text,
+  continue_reading boolean,
+  overall_notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, chapter_slug)
 );
 
 create unique index if not exists orders_provider_reference_key
@@ -121,8 +145,15 @@ create index if not exists idx_beta_applications_email
 create index if not exists idx_beta_applications_status
   on public.beta_applications (status, created_at desc);
 
+create unique index if not exists beta_applications_user_id_key
+  on public.beta_applications (user_id)
+  where user_id is not null;
+
 create index if not exists idx_beta_feedback_application
   on public.beta_feedback (application_id, created_at);
+
+create index if not exists idx_beta_feedback_user_chapter
+  on public.beta_feedback (user_id, chapter_slug, created_at desc);
 
 drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at
@@ -137,6 +168,21 @@ for each row execute function public.set_updated_at();
 drop trigger if exists newsletter_set_updated_at on public.newsletter_subscribers;
 create trigger newsletter_set_updated_at
 before update on public.newsletter_subscribers
+for each row execute function public.set_updated_at();
+
+drop trigger if exists beta_applications_set_updated_at on public.beta_applications;
+create trigger beta_applications_set_updated_at
+before update on public.beta_applications
+for each row execute function public.set_updated_at();
+
+drop trigger if exists beta_feedback_set_updated_at on public.beta_feedback;
+create trigger beta_feedback_set_updated_at
+before update on public.beta_feedback
+for each row execute function public.set_updated_at();
+
+drop trigger if exists beta_chapter_reviews_set_updated_at on public.beta_chapter_reviews;
+create trigger beta_chapter_reviews_set_updated_at
+before update on public.beta_chapter_reviews
 for each row execute function public.set_updated_at();
 
 create or replace function public.handle_new_user()
@@ -197,6 +243,7 @@ alter table public.subscriptions enable row level security;
 alter table public.newsletter_subscribers enable row level security;
 alter table public.beta_applications enable row level security;
 alter table public.beta_feedback enable row level security;
+alter table public.beta_chapter_reviews enable row level security;
 
 drop policy if exists "Users can read their own profile" on public.profiles;
 create policy "Users can read their own profile"
@@ -239,13 +286,67 @@ create policy "Anyone can join newsletter"
   );
 
 drop policy if exists "Anyone can submit beta applications" on public.beta_applications;
-create policy "Anyone can submit beta applications"
+drop policy if exists "Authenticated users can apply for beta" on public.beta_applications;
+create policy "Authenticated users can apply for beta"
   on public.beta_applications for insert
-  to anon, authenticated
+  to authenticated
   with check (
-    status = 'pending'
+    (select auth.uid()) = user_id
+    and status = 'pending'
     and char_length(name) between 1 and 120
     and email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$'
+  );
+
+drop policy if exists "Users can read their own beta application" on public.beta_applications;
+create policy "Users can read their own beta application"
+  on public.beta_applications for select
+  to authenticated
+  using ((select auth.uid()) = user_id);
+
+drop policy if exists "Approved readers can manage their feedback" on public.beta_feedback;
+create policy "Approved readers can manage their feedback"
+  on public.beta_feedback for all
+  to authenticated
+  using (
+    (select auth.uid()) = user_id
+    and exists (
+      select 1 from public.beta_applications application
+      where application.id = application_id
+        and application.user_id = (select auth.uid())
+        and application.status in ('approved', 'completed')
+    )
+  )
+  with check (
+    (select auth.uid()) = user_id
+    and exists (
+      select 1 from public.beta_applications application
+      where application.id = application_id
+        and application.user_id = (select auth.uid())
+        and application.status in ('approved', 'completed')
+    )
+  );
+
+drop policy if exists "Approved readers can manage chapter reviews" on public.beta_chapter_reviews;
+create policy "Approved readers can manage chapter reviews"
+  on public.beta_chapter_reviews for all
+  to authenticated
+  using (
+    (select auth.uid()) = user_id
+    and exists (
+      select 1 from public.beta_applications application
+      where application.id = application_id
+        and application.user_id = (select auth.uid())
+        and application.status in ('approved', 'completed')
+    )
+  )
+  with check (
+    (select auth.uid()) = user_id
+    and exists (
+      select 1 from public.beta_applications application
+      where application.id = application_id
+        and application.user_id = (select auth.uid())
+        and application.status in ('approved', 'completed')
+    )
   );
 
 revoke all on table
@@ -254,10 +355,13 @@ revoke all on table
   public.subscriptions,
   public.newsletter_subscribers,
   public.beta_applications,
-  public.beta_feedback
+  public.beta_feedback,
+  public.beta_chapter_reviews
 from anon, authenticated;
 
 grant select, insert, update on public.profiles to authenticated;
 grant select on public.orders, public.subscriptions to authenticated;
-grant insert on public.newsletter_subscribers, public.beta_applications
-  to anon, authenticated;
+grant insert on public.newsletter_subscribers to anon, authenticated;
+grant select, insert on public.beta_applications to authenticated;
+grant select, insert, update, delete on public.beta_feedback to authenticated;
+grant select, insert, update on public.beta_chapter_reviews to authenticated;

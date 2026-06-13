@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { getReaderAccess } from "@/lib/access-control";
 import ReaderChapter from "@/components/ReaderChapter";
+import BookHub from "@/components/BookHub";
 
 import { getReaderChapters } from "@/lib/book-chapters";
 
@@ -16,8 +17,17 @@ export default async function BookPage({
   const access = await getReaderAccess(user?.id || null);
   const readerChapters = getReaderChapters();
 
-  // Get requested chapter or default to chapter one
-  const requestedChapter = params.chapter || "chapter-one";
+  if (!params.chapter) {
+    return (
+      <BookHub
+        chapters={readerChapters}
+        canReadFullBook={access.canReadFullBook}
+        isBetaReader={access.isBetaReader}
+      />
+    );
+  }
+
+  const requestedChapter = params.chapter;
   const currentChapter =
     readerChapters.find((chapter) => chapter.slug === requestedChapter) ||
     readerChapters[0];
@@ -33,6 +43,8 @@ export default async function BookPage({
           canReadEarlyChapters: access.canReadEarlyChapters,
           canAccessSupporterNotes: access.canAccessSupporterNotes,
           canAccessPatronExtras: access.canAccessPatronExtras,
+          isBetaReader: access.isBetaReader,
+          betaApplicationId: access.betaApplicationId,
         }}
         userId={user?.id || null}
         basePath="/book"

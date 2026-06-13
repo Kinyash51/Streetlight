@@ -12,9 +12,20 @@ interface Subscription {
   cancel_at_period_end: boolean;
 }
 
+interface BetaApplication {
+  id: string;
+  status: "pending" | "approved" | "rejected" | "completed";
+  reading_deadline: string | null;
+}
+
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [betaApplication, setBetaApplication] = useState<BetaApplication | null>(
+    null,
+  );
+  const [feedbackCount, setFeedbackCount] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,13 +34,36 @@ export default function DashboardPage() {
       setUser(user);
 
       if (user) {
-        const { data: sub } = await supabase
-          .from("subscriptions")
-          .select("tier, status, current_period_end, cancel_at_period_end")
-          .eq("user_id", user.id)
-          .single();
+        const [
+          { data: sub },
+          { data: application },
+          { count: paragraphNotes },
+          { count: chapterReviews },
+        ] = await Promise.all([
+          supabase
+            .from("subscriptions")
+            .select("tier, status, current_period_end, cancel_at_period_end")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+          supabase
+            .from("beta_applications")
+            .select("id, status, reading_deadline")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+          supabase
+            .from("beta_feedback")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id),
+          supabase
+            .from("beta_chapter_reviews")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id),
+        ]);
 
         setSubscription(sub);
+        setBetaApplication(application as BetaApplication | null);
+        setFeedbackCount(paragraphNotes ?? 0);
+        setReviewCount(chapterReviews ?? 0);
       }
 
       setLoading(false);
@@ -85,6 +119,21 @@ export default function DashboardPage() {
     : subscription?.tier === "supporter" 
     ? "supporter" 
     : "free";
+  const betaStatusLabel =
+    betaApplication?.status === "approved"
+      ? "Approved"
+      : betaApplication?.status === "completed"
+        ? "Completed"
+        : betaApplication?.status === "rejected"
+          ? "Not selected"
+          : "Pending review";
+  const betaDeadline = betaApplication?.reading_deadline
+    ? new Date(betaApplication.reading_deadline).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
 
   return (
     <div className="dashboard-page">
@@ -215,7 +264,55 @@ export default function DashboardPage() {
         )}
 
         {/* Beta Program */}
-        {!isActive && (
+        {betaApplication ? (
+          <div className="dashboard-card beta-cta">
+            <div className="membership-header">
+              <h2>Beta Reader</h2>
+              <span className={`beta-status beta-status-${betaApplication.status}`}>
+                {betaStatusLabel}
+              </span>
+            </div>
+            {betaApplication.status === "approved" ||
+            betaApplication.status === "completed" ? (
+              <>
+                <p>
+                  Your private manuscript feedback tools are active inside the
+                  book reader.
+                </p>
+                <div className="dashboard-list">
+                  <div>
+                    <span>Paragraph notes</span>
+                    <strong>{feedbackCount}</strong>
+                  </div>
+                  <div>
+                    <span>Chapter reviews</span>
+                    <strong>{reviewCount}</strong>
+                  </div>
+                  {betaDeadline ? (
+                    <div>
+                      <span>Reading deadline</span>
+                      <strong>{betaDeadline}</strong>
+                    </div>
+                  ) : null}
+                </div>
+                <Link href="/book" className="btn-primary">
+                  Open Beta Draft
+                </Link>
+              </>
+            ) : (
+              <>
+                <p>
+                  {betaApplication.status === "rejected"
+                    ? "This reading group is currently full. Your account remains ready for the next round."
+                    : "Your application is waiting for review. The decision will appear here."}
+                </p>
+                <Link href="/beta" className="btn-ghost">
+                  View Application
+                </Link>
+              </>
+            )}
+          </div>
+        ) : !isActive ? (
           <div className="dashboard-card beta-cta">
             <h2>Want to read the full draft?</h2>
             <p>Apply to the Streetlight Beta Program. Read the complete story before launch and help shape the final version.</p>
@@ -223,7 +320,7 @@ export default function DashboardPage() {
               Apply for Beta Access
             </Link>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

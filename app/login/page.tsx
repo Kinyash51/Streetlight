@@ -13,6 +13,10 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const router = useRouter();
+  const getNextPath = () => {
+    const next = new URLSearchParams(window.location.search).get("next");
+    return next?.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -39,7 +43,7 @@ export default function LoginPage() {
         });
 
         if (error) throw error;
-        router.push("/dashboard");
+        router.push(getNextPath());
         router.refresh();
       }
     } catch (err) {
@@ -55,7 +59,9 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/welcome`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+          mode === "signin" ? getNextPath() : "/welcome",
+        )}`,
       },
     });
 

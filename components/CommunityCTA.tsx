@@ -12,8 +12,8 @@ export default function CommunityCTA() {
         Streetlight universe from the inside.
       </p>
 
-        <Link href="/community" className="btn-primary">
-          Join the Community
+        <Link href="/beta" className="btn-primary">
+          Apply to Beta Read
         </Link>
       </FadeIn>
     </section>
