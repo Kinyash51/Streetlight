@@ -190,8 +190,7 @@ export function SearchTrigger({ chapters }: SearchTriggerProps) {
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-4-4" />
         </svg>
-        <span className="nav-search-label">Search</span>
-        <kbd>Ctrl K</kbd>
+        <span className="nav-search-label">Search Streetlight</span>
       </button>
 
       {open ? (

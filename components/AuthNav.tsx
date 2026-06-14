@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase-client";
@@ -18,6 +18,7 @@ export default function AuthNav({
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [tier, setTier] = useState<string | null>(null);
+  const authNavRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function getUser() {
@@ -58,6 +59,35 @@ export default function AuthNav({
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!dropdownOpen) {
+      return;
+    }
+
+    function closeDropdown(event: MouseEvent) {
+      if (
+        authNavRef.current &&
+        !authNavRef.current.contains(event.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", closeDropdown);
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", closeDropdown);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [dropdownOpen]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -126,7 +156,7 @@ export default function AuthNav({
   }
 
   return (
-    <div className="auth-nav">
+    <div className="auth-nav" ref={authNavRef}>
       <button
         type="button"
         className="auth-nav-trigger"
@@ -134,9 +164,10 @@ export default function AuthNav({
         aria-expanded={dropdownOpen}
       >
         <span className="auth-nav-avatar">{initials}</span>
-        {tierBadge ? (
-          <span className={`auth-nav-badge ${tierBadge}`}>{tierBadge}</span>
-        ) : null}
+        <span className="auth-nav-trigger-copy">
+          <strong>{displayName}</strong>
+          <small>{tierBadge ?? "Reader"}</small>
+        </span>
         <svg
           width="12"
           height="12"
@@ -156,18 +187,23 @@ export default function AuthNav({
       </button>
 
       {dropdownOpen ? (
-        <div className="auth-nav-dropdown">
+        <div className="auth-nav-dropdown" role="menu">
           <div className="auth-nav-dropdown-header">
-            <span className="auth-nav-dropdown-name">{displayName}</span>
-            <span className="auth-nav-dropdown-email">{user.email}</span>
+            <span className="auth-nav-avatar auth-nav-avatar-large">{initials}</span>
+            <span>
+              <span className="auth-nav-dropdown-name">{displayName}</span>
+              <span className="auth-nav-dropdown-email">{user.email}</span>
+            </span>
+            {tierBadge ? (
+              <span className={`auth-nav-badge ${tierBadge}`}>{tierBadge}</span>
+            ) : null}
           </div>
-
-          <div className="auth-nav-dropdown-divider" />
 
           <Link
             href="/dashboard"
             className="auth-nav-dropdown-item"
             onClick={() => setDropdownOpen(false)}
+            role="menuitem"
           >
             <svg
               width="16"
@@ -190,16 +226,28 @@ export default function AuthNav({
             href="/account"
             className="auth-nav-dropdown-item"
             onClick={() => setDropdownOpen(false)}
+            role="menuitem"
           >
+            <svg
+              width="17"
+              height="17"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21a8 8 0 0 1 16 0" />
+            </svg>
             Account
           </Link>
-
-          <div className="auth-nav-dropdown-divider" />
 
           <button
             type="button"
             className="auth-nav-dropdown-item signout"
             onClick={handleSignOut}
+            role="menuitem"
           >
             <svg
               width="16"

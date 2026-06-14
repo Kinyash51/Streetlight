@@ -57,7 +57,16 @@ export default function HighlightsPage() {
             {highlights.map((highlight) => (
               <article className="highlight-card" key={highlight.id}>
                 <p className="reader-kicker">{highlight.chapterTitle}</p>
-                <blockquote>{highlight.text}</blockquote>
+                <Link
+                  href={`/book?chapter=${highlight.chapterSlug}${
+                    typeof highlight.paragraphIndex === "number"
+                      ? `#p-${highlight.paragraphIndex}`
+                      : ""
+                  }`}
+                  className="highlight-journal-link"
+                >
+                  <blockquote>{highlight.text}</blockquote>
+                </Link>
                 <div className="highlight-meta">
                   <span>{formatHighlightDate(highlight.createdAt)}</span>
                   <button

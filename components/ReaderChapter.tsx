@@ -63,6 +63,11 @@ type ReaderSettings = {
   wide: boolean;
 };
 
+type HighlightBarPosition = {
+  left: number;
+  top: number;
+};
+
 function estimateReadTime(chapter: ReaderChapterData) {
   const wordCount = [chapter.intro, ...chapter.paragraphs].join(" ").split(/\s+/).length;
   const minutes = Math.max(1, Math.ceil(wordCount / 210));
@@ -134,6 +139,14 @@ export default function ReaderChapter({
   const [scrollProgress, setScrollProgress] = useState(25);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
+  const [selectedParagraphIndex, setSelectedParagraphIndex] = useState<
+    number | null
+  >(null);
+  const [highlightBarPosition, setHighlightBarPosition] =
+    useState<HighlightBarPosition | null>(null);
+  const [pulsingParagraphIndex, setPulsingParagraphIndex] = useState<
+    number | null
+  >(null);
   const [highlightSaved, setHighlightSaved] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
@@ -157,8 +170,63 @@ export default function ReaderChapter({
 
   useEffect(() => {
     const savedSettings = readSavedReaderSettings();
-    window.setTimeout(() => setSettings(savedSettings), 0);
+    const hasParagraphTarget = /^#p-\d+$/.test(window.location.hash);
+    window.setTimeout(
+      () =>
+        setSettings(
+          hasParagraphTarget
+            ? { ...savedSettings, mode: "scroll" }
+            : savedSettings,
+        ),
+      0,
+    );
   }, []);
+
+  useEffect(() => {
+    const match = window.location.hash.match(/^#p-(\d+)$/);
+
+    if (!match) {
+      return;
+    }
+
+    const targetIndex = Number.parseInt(match[1], 10);
+    let pulseTimer: number | undefined;
+    let scrollTimer: number | undefined;
+
+    const modeTimer = window.setTimeout(() => {
+      setSettings((currentSettings) => ({
+        ...currentSettings,
+        mode: "scroll",
+      }));
+
+      scrollTimer = window.setTimeout(() => {
+        const targetElement = document.getElementById(`p-${targetIndex}`);
+
+        if (!targetElement) {
+          return;
+        }
+
+        targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        setPulsingParagraphIndex(targetIndex);
+        pulseTimer = window.setTimeout(
+          () => setPulsingParagraphIndex(null),
+          4000,
+        );
+      }, 180);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(modeTimer);
+
+      if (scrollTimer !== undefined) {
+        window.clearTimeout(scrollTimer);
+      }
+
+      if (pulseTimer !== undefined) {
+        window.clearTimeout(pulseTimer);
+      }
+    };
+  }, [chapter.slug]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -303,15 +371,53 @@ export default function ReaderChapter({
   function captureSelection() {
     const selection = window.getSelection();
     const text = selection?.toString().trim() ?? "";
+    const anchorElement =
+      selection?.anchorNode instanceof Element
+        ? selection.anchorNode
+        : selection?.anchorNode?.parentElement;
+    const paragraphElement =
+      anchorElement?.closest<HTMLElement>("[data-paragraph-index]");
+    const paragraphIndex = Number.parseInt(
+      paragraphElement?.dataset.paragraphIndex ?? "",
+      10,
+    );
+    const selectionRange =
+      selection &&
+      !selection.isCollapsed &&
+      selection.rangeCount > 0
+        ? selection.getRangeAt(0)
+        : null;
+    const selectionRect = selectionRange?.getBoundingClientRect();
 
     setHighlightSaved(false);
 
-    if (text.length < 3) {
+    if (text.length < 3 || !selectionRect) {
       setSelectedText("");
+      setSelectedParagraphIndex(null);
+      setHighlightBarPosition(null);
       return;
     }
 
     setSelectedText(text.slice(0, 600));
+    setSelectedParagraphIndex(
+      Number.isNaN(paragraphIndex) ? null : paragraphIndex,
+    );
+    setHighlightBarPosition(
+      selectionRect
+        ? {
+            left: Math.min(
+              window.scrollX + window.innerWidth - 24,
+              Math.max(
+                window.scrollX + 24,
+                selectionRect.left +
+                  window.scrollX +
+                  selectionRect.width / 2,
+              ),
+            ),
+            top: selectionRect.top + window.scrollY,
+          }
+        : null,
+    );
   }
 
   function saveHighlight() {
@@ -320,9 +426,12 @@ export default function ReaderChapter({
     }
 
     const nextHighlight: LocalHighlight = {
-      id: `${Date.now()}`,
+      id: crypto.randomUUID(),
       chapterSlug: chapter.slug,
       chapterTitle: chapter.title,
+      ...(selectedParagraphIndex !== null
+        ? { paragraphIndex: selectedParagraphIndex }
+        : {}),
       text: selectedText,
       createdAt: new Date().toISOString(),
     };
@@ -331,8 +440,13 @@ export default function ReaderChapter({
     writeLocalHighlights([nextHighlight, ...highlights].slice(0, 50));
     window.getSelection()?.removeAllRanges();
     setSelectedText("");
+    setSelectedParagraphIndex(null);
     setHighlightSaved(true);
     setToastMessage("Highlight saved locally.");
+    window.setTimeout(() => {
+      setHighlightSaved(false);
+      setHighlightBarPosition(null);
+    }, 2200);
     window.setTimeout(() => setToastMessage(""), 2400);
   }
 
@@ -404,8 +518,19 @@ export default function ReaderChapter({
           className={bookmarked ? "reader-tool active" : "reader-tool"}
           onClick={toggleBookmark}
           aria-pressed={bookmarked}
+          aria-label={bookmarked ? "Remove bookmark" : "Bookmark chapter"}
+          data-tooltip={bookmarked ? "Bookmarked" : "Bookmark"}
         >
-          {bookmarked ? "Saved" : "Save"}
+          <svg
+            className="reader-tool-icon"
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M6.75 4.75A1.75 1.75 0 0 1 8.5 3h7A1.75 1.75 0 0 1 17.25 4.75V21L12 17.55 6.75 21V4.75Z"
+              fill={bookmarked ? "currentColor" : "none"}
+            />
+          </svg>
         </button>
 
         <button
@@ -413,21 +538,30 @@ export default function ReaderChapter({
           className={settingsOpen ? "reader-settings-button active" : "reader-settings-button"}
           aria-expanded={settingsOpen}
           aria-controls="reader-settings-sheet"
+          aria-label="Reading appearance"
+          data-tooltip="Appearance"
           onClick={() => setSettingsOpen((value) => !value)}
         >
-          <span aria-hidden="true">Aa</span>
-          Appearance
+          <span className="reader-type-icon" aria-hidden="true">Aa</span>
         </button>
 
         {chapters.length > 1 && (
           <button
             type="button"
             className={mobileMenuOpen ? "reader-mobile-menu active" : "reader-mobile-menu"}
-            aria-label="Open chapters"
+            aria-label={mobileMenuOpen ? "Close chapter list" : "Open chapter list"}
             aria-expanded={mobileMenuOpen}
+            data-tooltip="Chapters"
             onClick={() => setMobileMenuOpen((value) => !value)}
           >
-            Chapters
+            <svg
+              className="reader-tool-icon"
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+            >
+              <path d="M8.5 6.5h10M8.5 12h10M8.5 17.5h10" />
+              <path d="M5 6.5h.01M5 12h.01M5 17.5h.01" />
+            </svg>
           </button>
         )}
       </section>
@@ -619,7 +753,17 @@ export default function ReaderChapter({
           {mode === "scroll" ? (
             <>
               <div className="reader-paragraph-block">
-                <p className="reader-intro">{chapter.intro}</p>
+                <p
+                  id="p-0"
+                  data-paragraph-index={0}
+                  className={`reader-intro ${
+                    pulsingParagraphIndex === 0
+                      ? "pulse-highlight-target"
+                      : ""
+                  }`}
+                >
+                  {chapter.intro}
+                </p>
                 {canLeaveBetaFeedback && betaApplicationId && userId ? (
                   <ParagraphFeedback
                     applicationId={betaApplicationId}
@@ -632,7 +776,17 @@ export default function ReaderChapter({
               </div>
               {chapter.paragraphs.map((paragraph, index) => (
                 <div className="reader-paragraph-block" key={`${index}-${paragraph}`}>
-                  <p>{paragraph}</p>
+                  <p
+                    id={`p-${index + 1}`}
+                    data-paragraph-index={index + 1}
+                    className={
+                      pulsingParagraphIndex === index + 1
+                        ? "pulse-highlight-target"
+                        : ""
+                    }
+                  >
+                    {paragraph}
+                  </p>
                   {canLeaveBetaFeedback && betaApplicationId && userId ? (
                     <ParagraphFeedback
                       applicationId={betaApplicationId}
@@ -647,15 +801,33 @@ export default function ReaderChapter({
             </>
           ) : (
             <>
-              {currentPage.map((paragraph, index) =>
-                pageIndex === 0 && index === 0 ? (
-                  <p className="reader-intro" key={paragraph}>
+              {currentPage.map((paragraph, index) => {
+                const paragraphIndex =
+                  pageIndex === 0 ? index : index + 3;
+                const pulsing = pulsingParagraphIndex === paragraphIndex;
+
+                return pageIndex === 0 && index === 0 ? (
+                  <p
+                    id={`p-${paragraphIndex}`}
+                    data-paragraph-index={paragraphIndex}
+                    className={`reader-intro ${
+                      pulsing ? "pulse-highlight-target" : ""
+                    }`}
+                    key={paragraph}
+                  >
                     {paragraph}
                   </p>
                 ) : (
-                  <p key={paragraph}>{paragraph}</p>
-                )
-              )}
+                  <p
+                    id={`p-${paragraphIndex}`}
+                    data-paragraph-index={paragraphIndex}
+                    className={pulsing ? "pulse-highlight-target" : ""}
+                    key={paragraph}
+                  >
+                    {paragraph}
+                  </p>
+                );
+              })}
               <div className="page-controls">
                 <button
                   type="button"
@@ -712,7 +884,18 @@ export default function ReaderChapter({
       )}
 
       {(selectedText || highlightSaved) && (
-        <section className="highlight-save-bar" aria-live="polite">
+        <section
+          className="highlight-save-bar"
+          aria-live="polite"
+          style={
+            highlightBarPosition
+              ? {
+                  left: `${highlightBarPosition.left}px`,
+                  top: `${highlightBarPosition.top}px`,
+                }
+              : undefined
+          }
+        >
           {selectedText ? (
             <>
               <p>

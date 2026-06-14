@@ -11,14 +11,13 @@ const items = [
 export default function UniversePreview() {
   return (
     <section className="universe-preview">
-        <FadeIn>
-      <div className="section-head">
-        <p className="section-tag">The Universe</p>
-        <h2>The city is more than a setting.</h2>
-        <p>
-          Every alley, streetlamp, and shadow belongs to something larger.
-        </p>
-      </div>
+      <FadeIn>
+        <div className="section-head">
+          <p className="section-tag">The Universe</p>
+          <h2>The city is more than a setting.</h2>
+          <p>Every alley, streetlamp, and shadow belongs to something larger.</p>
+        </div>
+      </FadeIn>
 
       <div className="universe-grid">
         {items.map(([title, text]) => (
@@ -29,10 +28,11 @@ export default function UniversePreview() {
         ))}
       </div>
 
-      <Link href="/universe" className="btn-primary">
-        Explore the Universe
-      </Link>
-        </FadeIn>
+      <FadeIn>
+        <Link href="/universe" className="btn-primary">
+          Explore the Universe
+        </Link>
+      </FadeIn>
     </section>
   );
 }

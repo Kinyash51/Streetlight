@@ -2,6 +2,7 @@ export type LocalHighlight = {
   id: string;
   chapterSlug: string;
   chapterTitle: string;
+  paragraphIndex?: number;
   text: string;
   createdAt: string;
 };
@@ -28,6 +29,10 @@ export function readLocalHighlights() {
           typeof highlight.id === "string" &&
           typeof highlight.chapterSlug === "string" &&
           typeof highlight.chapterTitle === "string" &&
+          (highlight.paragraphIndex === undefined ||
+            (typeof highlight.paragraphIndex === "number" &&
+              Number.isInteger(highlight.paragraphIndex) &&
+              highlight.paragraphIndex >= 0)) &&
           typeof highlight.text === "string" &&
           typeof highlight.createdAt === "string"
       )
