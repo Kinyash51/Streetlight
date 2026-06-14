@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type MouseEvent,
 } from "react";
@@ -23,8 +24,10 @@ import {
   type ReaderMode,
   type ReaderProgress,
 } from "@/lib/reader-progress";
-
-type ReaderTheme = "dark" | "amber" | "paper";
+import {
+  useReaderSettings,
+  type ReaderTheme,
+} from "@/src/hooks/useReaderSettings";
 
 type ReaderChapterData = {
   slug: string;
@@ -48,21 +51,6 @@ type ReaderChapterProps = {
   basePath?: "/read" | "/book";
 };
 
-const readerSettingsKey = "streetlight-reader-settings";
-const defaultReaderSettings: ReaderSettings = {
-  mode: "scroll",
-  theme: "dark",
-  fontScale: 1,
-  wide: false,
-};
-
-type ReaderSettings = {
-  mode: ReaderMode;
-  theme: ReaderTheme;
-  fontScale: number;
-  wide: boolean;
-};
-
 type HighlightBarPosition = {
   left: number;
   top: number;
@@ -79,50 +67,6 @@ function readBookmarks() {
   return readReaderBookmarks();
 }
 
-function isReaderMode(value: unknown): value is ReaderMode {
-  return value === "scroll" || value === "page";
-}
-
-function isReaderTheme(value: unknown): value is ReaderTheme {
-  return value === "dark" || value === "amber" || value === "paper";
-}
-
-function readSavedReaderSettings(): ReaderSettings {
-  if (typeof window === "undefined") {
-    return defaultReaderSettings;
-  }
-
-  const savedSettings = window.localStorage.getItem(readerSettingsKey);
-
-  if (!savedSettings) {
-    return defaultReaderSettings;
-  }
-
-  try {
-    const parsedSettings = JSON.parse(savedSettings) as Partial<ReaderSettings>;
-
-    return {
-      mode: isReaderMode(parsedSettings.mode)
-        ? parsedSettings.mode
-        : defaultReaderSettings.mode,
-      theme: isReaderTheme(parsedSettings.theme)
-        ? parsedSettings.theme
-        : defaultReaderSettings.theme,
-      fontScale:
-        typeof parsedSettings.fontScale === "number"
-          ? Math.min(1.25, Math.max(0.9, parsedSettings.fontScale))
-          : defaultReaderSettings.fontScale,
-      wide:
-        typeof parsedSettings.wide === "boolean"
-          ? parsedSettings.wide
-          : defaultReaderSettings.wide,
-    };
-  } catch {
-    window.localStorage.removeItem(readerSettingsKey);
-    return defaultReaderSettings;
-  }
-}
-
 function getChapterHref(basePath: "/read" | "/book", slug: string) {
   return basePath === "/book" ? `/book?chapter=${slug}` : `/read/${slug}`;
 }
@@ -134,7 +78,8 @@ export default function ReaderChapter({
   userId,
   basePath = "/read",
 }: ReaderChapterProps) {
-  const [settings, setSettings] = useState<ReaderSettings>(defaultReaderSettings);
+  const { settings, updateSettings, isSyncing, isReady } =
+    useReaderSettings(userId);
   const [pageIndex, setPageIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(25);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -153,7 +98,9 @@ export default function ReaderChapter({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [chapterReaction, setChapterReaction] = useState("");
-  const { fontScale, mode, theme, wide } = settings;
+  const manuscriptRef = useRef<HTMLElement>(null);
+  const touchSelectionTimer = useRef<number | null>(null);
+  const { fontSize, lineHeight, mode, theme, wide } = settings;
   const readTime = useMemo(() => estimateReadTime(chapter), [chapter]);
   const canReadFullBook = access?.canReadFullBook ?? false;
   const betaApplicationId = access?.betaApplicationId ?? null;
@@ -169,20 +116,10 @@ export default function ReaderChapter({
   const chapterLabel = chapter.number ? `Chapter ${chapter.number}` : chapter.title;
 
   useEffect(() => {
-    const savedSettings = readSavedReaderSettings();
-    const hasParagraphTarget = /^#p-\d+$/.test(window.location.hash);
-    window.setTimeout(
-      () =>
-        setSettings(
-          hasParagraphTarget
-            ? { ...savedSettings, mode: "scroll" }
-            : savedSettings,
-        ),
-      0,
-    );
-  }, []);
+    if (!isReady) {
+      return;
+    }
 
-  useEffect(() => {
     const match = window.location.hash.match(/^#p-(\d+)$/);
 
     if (!match) {
@@ -194,10 +131,7 @@ export default function ReaderChapter({
     let scrollTimer: number | undefined;
 
     const modeTimer = window.setTimeout(() => {
-      setSettings((currentSettings) => ({
-        ...currentSettings,
-        mode: "scroll",
-      }));
+      updateSettings({ mode: "scroll" });
 
       scrollTimer = window.setTimeout(() => {
         const targetElement = document.getElementById(`p-${targetIndex}`);
@@ -226,7 +160,7 @@ export default function ReaderChapter({
         window.clearTimeout(pulseTimer);
       }
     };
-  }, [chapter.slug]);
+  }, [chapter.slug, isReady, updateSettings]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -259,11 +193,6 @@ export default function ReaderChapter({
 
     return progress >= 92 ? "Almost done" : `${minutes} min left`;
   }, [progress, readTime]);
-
-  function saveSettings(nextSettings: ReaderSettings) {
-    setSettings(nextSettings);
-    window.localStorage.setItem(readerSettingsKey, JSON.stringify(nextSettings));
-  }
 
   const saveProgress = useCallback((
     progressPercent: number,
@@ -345,6 +274,15 @@ export default function ReaderChapter({
     return () => document.body.classList.remove("reader-focus-mode");
   }, [controlsVisible]);
 
+  useEffect(
+    () => () => {
+      if (touchSelectionTimer.current !== null) {
+        window.clearTimeout(touchSelectionTimer.current);
+      }
+    },
+    [],
+  );
+
   function updatePageIndex(nextPageIndex: number) {
     setPageIndex(nextPageIndex);
     saveProgress(
@@ -355,26 +293,25 @@ export default function ReaderChapter({
   }
 
   function decreaseFont() {
-    saveSettings({
-      ...settings,
-      fontScale: Math.max(0.9, Number((fontScale - 0.05).toFixed(2))),
-    });
+    updateSettings({ fontSize: Math.max(14, fontSize - 1) });
   }
 
   function increaseFont() {
-    saveSettings({
-      ...settings,
-      fontScale: Math.min(1.25, Number((fontScale + 0.05).toFixed(2))),
-    });
+    updateSettings({ fontSize: Math.min(20, fontSize + 1) });
   }
 
   function captureSelection() {
     const selection = window.getSelection();
     const text = selection?.toString().trim() ?? "";
+    const manuscript = manuscriptRef.current;
     const anchorElement =
       selection?.anchorNode instanceof Element
         ? selection.anchorNode
         : selection?.anchorNode?.parentElement;
+    const focusElement =
+      selection?.focusNode instanceof Element
+        ? selection.focusNode
+        : selection?.focusNode?.parentElement;
     const paragraphElement =
       anchorElement?.closest<HTMLElement>("[data-paragraph-index]");
     const paragraphIndex = Number.parseInt(
@@ -387,11 +324,24 @@ export default function ReaderChapter({
       selection.rangeCount > 0
         ? selection.getRangeAt(0)
         : null;
-    const selectionRect = selectionRange?.getBoundingClientRect();
+    const selectionRects = selectionRange
+      ? Array.from(selectionRange.getClientRects())
+      : [];
+    const selectionRect = selectionRects.at(-1);
 
     setHighlightSaved(false);
 
-    if (text.length < 3 || !selectionRect) {
+    if (
+      text.length < 3 ||
+      !selectionRect ||
+      !manuscript ||
+      !selection?.anchorNode ||
+      !selection.focusNode ||
+      !manuscript.contains(selection.anchorNode) ||
+      !manuscript.contains(selection.focusNode) ||
+      !anchorElement ||
+      !focusElement
+    ) {
       setSelectedText("");
       setSelectedParagraphIndex(null);
       setHighlightBarPosition(null);
@@ -418,6 +368,22 @@ export default function ReaderChapter({
           }
         : null,
     );
+  }
+
+  function beginTouchSelection() {
+    if (touchSelectionTimer.current !== null) {
+      window.clearTimeout(touchSelectionTimer.current);
+    }
+
+    touchSelectionTimer.current = window.setTimeout(captureSelection, 250);
+  }
+
+  function finishTouchSelection() {
+    if (touchSelectionTimer.current !== null) {
+      window.clearTimeout(touchSelectionTimer.current);
+    }
+
+    touchSelectionTimer.current = window.setTimeout(captureSelection, 100);
   }
 
   function saveHighlight() {
@@ -484,7 +450,7 @@ export default function ReaderChapter({
 
   return (
     <main
-      className={`reader-page reader-theme-${theme} ${
+      className={`reader-page reader-viewport reader-theme-${theme} ${
         controlsVisible ? "" : "reader-controls-hidden"
       }`}
     >
@@ -507,8 +473,12 @@ export default function ReaderChapter({
         <div className="reader-progress" aria-label={`${progress}% complete`}>
           <span style={{ width: `${progress}%` }} />
         </div>
-        <p className="reader-settings-note">
-          Reader settings save on this device.
+        <p className="reader-settings-note" aria-live="polite">
+          {isSyncing
+            ? "Syncing reader settings..."
+            : userId
+              ? "Reader settings synced."
+              : "Reader settings save on this device."}
         </p>
       </section>
 
@@ -607,7 +577,7 @@ export default function ReaderChapter({
                 <button type="button" onClick={decreaseFont} aria-label="Decrease text size">
                   A-
                 </button>
-                <span>{Math.round(fontScale * 100)}%</span>
+                <span>{fontSize}px</span>
                 <button type="button" onClick={increaseFont} aria-label="Increase text size">
                   A+
                 </button>
@@ -624,7 +594,7 @@ export default function ReaderChapter({
                   type="button"
                   className={mode === "scroll" ? "active" : ""}
                   onClick={() => {
-                    saveSettings({ ...settings, mode: "scroll" });
+                    updateSettings({ mode: "scroll" });
                     setPageIndex(0);
                   }}
                 >
@@ -633,7 +603,7 @@ export default function ReaderChapter({
                 <button
                   type="button"
                   className={mode === "page" ? "active" : ""}
-                  onClick={() => saveSettings({ ...settings, mode: "page" })}
+                  onClick={() => updateSettings({ mode: "page" })}
                 >
                   Page
                 </button>
@@ -648,10 +618,48 @@ export default function ReaderChapter({
               <button
                 type="button"
                 className={wide ? "reader-sheet-option active" : "reader-sheet-option"}
-                onClick={() => saveSettings({ ...settings, wide: !wide })}
+                onClick={() => updateSettings({ wide: !wide })}
               >
                 {wide ? "Wide" : "Focused"}
               </button>
+            </div>
+
+            <div className="reader-setting-row">
+              <div>
+                <strong>Line spacing</strong>
+                <span>Give each line more or less breathing room.</span>
+              </div>
+              <div className="reader-control-group" aria-label="Line spacing">
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateSettings({
+                      lineHeight: Math.max(
+                        1.6,
+                        Number((lineHeight - .1).toFixed(1)),
+                      ),
+                    })
+                  }
+                  aria-label="Decrease line spacing"
+                >
+                  -
+                </button>
+                <span>{lineHeight.toFixed(1)}</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateSettings({
+                      lineHeight: Math.min(
+                        2.2,
+                        Number((lineHeight + .1).toFixed(1)),
+                      ),
+                    })
+                  }
+                  aria-label="Increase line spacing"
+                >
+                  +
+                </button>
+              </div>
             </div>
 
             <div className="reader-theme-options" aria-label="Reader theme">
@@ -661,7 +669,7 @@ export default function ReaderChapter({
                   className={theme === option ? `active ${option}` : option}
                   aria-pressed={theme === option}
                   key={option}
-                  onClick={() => saveSettings({ ...settings, theme: option })}
+                  onClick={() => updateSettings({ theme: option })}
                 >
                   <span aria-hidden="true">Aa</span>
                   {option}
@@ -740,19 +748,28 @@ export default function ReaderChapter({
 
       {canReadCurrentChapter ? (
         <article
+          ref={manuscriptRef}
           className={`reader-manuscript ${wide ? "wide" : ""} ${
             mode === "page" ? "paged" : ""
           }`}
-          style={{ fontSize: `${fontScale}rem` }}
+          style={{
+            fontSize: `${fontSize}px`,
+            "--reader-line-height": lineHeight,
+          } as React.CSSProperties}
           onMouseUp={captureSelection}
-          onTouchEnd={captureSelection}
+          onTouchStart={beginTouchSelection}
+          onTouchEnd={finishTouchSelection}
           onClick={toggleReaderChrome}
         >
           <p className="reader-kicker">{chapter.eyebrow}</p>
 
           {mode === "scroll" ? (
             <>
-              <div className="reader-paragraph-block">
+              <div
+                className={`reader-paragraph-block prose-paragraph-block ${
+                  selectedParagraphIndex === 0 ? "has-feedback-focus" : ""
+                }`}
+              >
                 <p
                   id="p-0"
                   data-paragraph-index={0}
@@ -775,7 +792,14 @@ export default function ReaderChapter({
                 ) : null}
               </div>
               {chapter.paragraphs.map((paragraph, index) => (
-                <div className="reader-paragraph-block" key={`${index}-${paragraph}`}>
+                <div
+                  className={`reader-paragraph-block prose-paragraph-block ${
+                    selectedParagraphIndex === index + 1
+                      ? "has-feedback-focus"
+                      : ""
+                  }`}
+                  key={`${index}-${paragraph}`}
+                >
                   <p
                     id={`p-${index + 1}`}
                     data-paragraph-index={index + 1}
@@ -885,7 +909,7 @@ export default function ReaderChapter({
 
       {(selectedText || highlightSaved) && (
         <section
-          className="highlight-save-bar"
+          className="highlight-save-bar selection-action-bubble"
           aria-live="polite"
           style={
             highlightBarPosition
